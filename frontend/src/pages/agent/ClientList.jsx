@@ -23,7 +23,7 @@ const CustomSelect = ({ options = [], value, onSelect, placeholder = 'Select...'
         return label?.toLowerCase().includes(searchTerm.toLowerCase());
     });
 
-    const displayLabel = typeof value === 'object' ? (value.label || value.name) : value;
+    const displayLabel = (value && typeof value === 'object') ? (value.label || value.name) : value;
 
     return (
         <div className="relative w-full" ref={wrapperRef}>
@@ -528,7 +528,10 @@ const ClientList = ({ user }) => {
                                                         value: o[pol.idField],
                                                         description: o.description || (o.address ? `${o.address.city}, ${o.address.stateOrProvince}` : '')
                                                     }))}
-                                                    value={editingClient.defaultPolicies?.[pol.key]?.[pol.idField]}
+                                                    value={editingClient.defaultPolicies?.[pol.key] ? {
+                                                        label: editingClient.defaultPolicies[pol.key].name || editingClient.defaultPolicies[pol.key].merchantLocationKey,
+                                                        value: editingClient.defaultPolicies[pol.key][pol.idField]
+                                                    } : null}
                                                     onSelect={(val) => {
                                                         const selected = pol.options.find(o => o[pol.idField] === val);
                                                         setEditingClient({
