@@ -513,9 +513,9 @@ const ClientList = ({ user }) => {
                                     <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Business Policies (Auto-Apply)</h4>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {[
-                                            { label: 'Fulfillment', key: 'fulfillment', icon: Zap, options: policies.fulfillment, idField: 'policyId' },
-                                            { label: 'Payment', key: 'payment', icon: Database, options: policies.payment, idField: 'policyId' },
-                                            { label: 'Returns', key: 'returns', icon: RefreshCw, options: policies.returns, idField: 'policyId' },
+                                            { label: 'Fulfillment', key: 'fulfillment', icon: Zap, options: policies.fulfillment, idField: 'fulfillmentPolicyId' },
+                                            { label: 'Payment', key: 'payment', icon: Database, options: policies.payment, idField: 'paymentPolicyId' },
+                                            { label: 'Returns', key: 'returns', icon: RefreshCw, options: policies.returns, idField: 'returnPolicyId' },
                                             { label: 'Location', key: 'location', icon: Globe, options: policies.locations, idField: 'merchantLocationKey' }
                                         ].map((pol) => (
                                             <div key={pol.label} className="space-y-2">

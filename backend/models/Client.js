@@ -13,7 +13,7 @@ const clientSchema = new mongoose.Schema({
     defaultPolicies: {
         fulfillment: mongoose.Schema.Types.Mixed,
         payment: mongoose.Schema.Types.Mixed,
-        return: mongoose.Schema.Types.Mixed,
+        returns: mongoose.Schema.Types.Mixed,
         location: mongoose.Schema.Types.Mixed
     },
     defaultRules: {
