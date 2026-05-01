@@ -19,17 +19,26 @@ const mainApi = axios.create({
 
 // Interceptor for both
 const attachHeaders = (config) => {
-    const sessionStr = localStorage.getItem('va_admin_session');
-    if (sessionStr) {
-        const session = JSON.parse(sessionStr);
+    // 1. Check Agent Portal Session
+    const agentSessionStr = localStorage.getItem('va_admin_session');
+    if (agentSessionStr) {
+        const session = JSON.parse(agentSessionStr);
         if (session.role === 'agent') {
             config.headers['x-user-id'] = session.id;
             config.headers['x-user-role'] = 'agent';
-        } else if (localStorage.getItem('vaster_role') === 'workforce') {
-            config.headers['x-user-id'] = session.id || 'admin_root';
-            config.headers['x-user-role'] = 'workforce';
+            return config;
         }
     }
+
+    // 2. Check Main Admin Portal Session
+    const mainRoleId = localStorage.getItem('vaster_user_id');
+    const mainRole = localStorage.getItem('vaster_role');
+    
+    if (mainRole === 'admin' || mainRole === 'workforce') {
+        config.headers['x-user-id'] = mainRoleId || 'admin_root';
+        config.headers['x-user-role'] = mainRole;
+    }
+    
     return config;
 };
 
@@ -37,8 +46,9 @@ api.interceptors.request.use(attachHeaders);
 mainApi.interceptors.request.use(attachHeaders);
 
 // AGENT TOOLS (Isolated)
-export const getProducts = async () => {
-    const response = await api.get('/products');
+export const getProducts = async (agentId = null) => {
+    const url = agentId ? `/products?agentId=${agentId}` : '/products';
+    const response = await api.get(url);
     return response.data;
 };
 

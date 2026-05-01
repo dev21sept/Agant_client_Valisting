@@ -4,7 +4,7 @@ import { getProducts, deleteProduct, getEbayAuthUrl, listProduct, updateProduct 
 import { Link, useLocation } from 'react-router-dom';
 import { useToast } from '../../components/Toast';
 
-const ProductList = ({ user }) => {
+const ProductList = ({ user, scopedAgentId, viewOnly }) => {
     const { addToast, showConfirm } = useToast();
     const location = useLocation();
     const [products, setProducts] = useState([]);
@@ -22,7 +22,7 @@ const ProductList = ({ user }) => {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
         loadProducts();
-    }, [location]);
+    }, [location, scopedAgentId]);
 
     const handleEbayConnect = async () => {
         try {
@@ -37,8 +37,9 @@ const ProductList = ({ user }) => {
 
     const loadProducts = async () => {
         try {
+            setLoading(true);
             // Force refresh to always get the latest list from the database
-            const data = await getProducts(true);
+            const data = await getProducts(scopedAgentId);
             setProducts(data);
         } catch (error) {
             console.error('Error loading products:', error);
@@ -129,7 +130,7 @@ const ProductList = ({ user }) => {
                     <p className="text-gray-500 mt-1">Manage your eBay product inventory.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                    {(!user || user.role === 'admin') && (
+                    {!viewOnly && (!user || user.role === 'admin') && (
                         <>
                             <button
                                 onClick={handleEbayConnect}
@@ -235,7 +236,7 @@ const ProductList = ({ user }) => {
                                 )}
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Condition</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pricing</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
+                                {!viewOnly && <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
@@ -325,40 +326,42 @@ const ProductList = ({ user }) => {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex justify-end gap-2.5">
-                                                 {product.status === 'draft' && (!user || user.role === 'admin' || user.allowApiListing) && (
+                                        {!viewOnly && (
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex justify-end gap-2.5">
+                                                     {product.status === 'draft' && (!user || user.role === 'admin' || user.allowApiListing) && (
+                                                        <button
+                                                            onClick={() => handleQuickPublish(product.id)}
+                                                            className="w-9 h-9 flex items-center justify-center text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-all border border-emerald-100 shadow-sm"
+                                                            title="Quick Publish Draft to eBay"
+                                                        >
+                                                            <Zap className="w-4 h-4" />
+                                                        </button>
+                                                    )}
                                                     <button
-                                                        onClick={() => handleQuickPublish(product.id)}
-                                                        className="w-9 h-9 flex items-center justify-center text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-all border border-emerald-100 shadow-sm"
-                                                        title="Quick Publish Draft to eBay"
+                                                        onClick={() => handlePreviewListing(product)}
+                                                        className="w-9 h-9 flex items-center justify-center text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all border border-indigo-100 shadow-sm"
+                                                        title="Preview & List to Marketplaces"
                                                     >
-                                                        <Zap className="w-4 h-4" />
+                                                        <Sparkles className="w-4 h-4" />
                                                     </button>
-                                                )}
-                                                <button
-                                                    onClick={() => handlePreviewListing(product)}
-                                                    className="w-9 h-9 flex items-center justify-center text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all border border-indigo-100 shadow-sm"
-                                                    title="Preview & List to Marketplaces"
-                                                >
-                                                    <Sparkles className="w-4 h-4" />
-                                                </button>
-                                                <Link
-                                                    to={`/products/edit/${product.id}`}
-                                                    className="w-9 h-9 flex items-center justify-center text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all border border-indigo-100 shadow-sm"
-                                                    title="Edit Product"
-                                                >
-                                                    <Edit className="w-4 h-4" />
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleDelete(product.id)}
-                                                    className="w-9 h-9 flex items-center justify-center text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all border border-red-100 shadow-sm"
-                                                    title="Delete Product"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
+                                                    <Link
+                                                        to={`/products/edit/${product.id}`}
+                                                        className="w-9 h-9 flex items-center justify-center text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all border border-indigo-100 shadow-sm"
+                                                        title="Edit Product"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => handleDelete(product.id)}
+                                                        className="w-9 h-9 flex items-center justify-center text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all border border-red-100 shadow-sm"
+                                                        title="Delete Product"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))
                             )}

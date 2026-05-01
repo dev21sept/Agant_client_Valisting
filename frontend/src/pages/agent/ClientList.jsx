@@ -493,7 +493,7 @@ const ClientList = ({ user }) => {
             {/* Edit Modal (FULL SYSTEM) */}
             {showEditModal && editingClient && (
                 <div 
-                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-300"
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-black/50 backdrop-blur-sm animate-in fade-in duration-300"
                     onClick={() => setShowEditModal(false)}
                 >
                     <div 
@@ -545,178 +545,178 @@ const ClientList = ({ user }) => {
                                             </div>
                                         )}
                                     </div>
-
-                                    {/* Multi-Agent Assignment Section */}
-                                    <div className="pt-6 border-t border-gray-100 space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Assign Agent to Client</h4>
-                                            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{editingClient.assignedAgents?.length || 0} Agents Assigned</span>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 gap-4">
-                                            {/* Left: Dropdown */}
-                                            <div className="space-y-2">
-                                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Find & Add Agents</label>
-                                                <MultiAgentSelect 
-                                                    agents={agents}
-                                                    selectedIds={editingClient.assignedAgents || []}
-                                                    onToggle={(id) => {
-                                                        const current = editingClient.assignedAgents || [];
-                                                        const next = current.includes(id) ? current.filter(cid => cid !== id) : [...current, id];
-                                                        setEditingClient({ ...editingClient, assignedAgents: next });
-                                                    }}
-                                                />
-                                            </div>
-
-                                            {/* Right: Selected Tags Box */}
-                                            <div className="space-y-2">
-                                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Active Workforce</label>
-                                                <div className="min-h-[48px] p-2 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex flex-wrap gap-2 items-start">
-                                                    {editingClient.assignedAgents?.length > 0 ? (
-                                                        editingClient.assignedAgents.map(id => {
-                                                            const agent = agents.find(a => a._id === id);
-                                                            if (!agent) return null;
-                                                            return (
-                                                                <div key={id} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-indigo-100 rounded-lg shadow-sm animate-in zoom-in-95 duration-200">
-                                                                    <span className="text-[11px] font-bold text-gray-700">{agent.name}</span>
-                                                                    <button 
-                                                                        onClick={() => setEditingClient({ ...editingClient, assignedAgents: editingClient.assignedAgents.filter(cid => cid !== id) })}
-                                                                        className="p-0.5 hover:bg-rose-50 hover:text-rose-600 rounded transition-colors"
-                                                                    >
-                                                                        <X className="w-3 h-3" />
-                                                                    </button>
-                                                                </div>
-                                                            );
-                                                        })
-                                                    ) : (
-                                                        <div className="w-full py-2 text-center text-[10px] font-bold text-gray-400 italic">No agents assigned yet</div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-
                                 </div>
 
                                 <div className="lg:col-span-2 space-y-8">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        {/* Listing Channel Controls */}
-                                        <div className="space-y-4">
-                                            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Listing Permissions</h4>
-                                            <div className="bg-gray-50/50 p-5 rounded-[2rem] border border-gray-100 space-y-4">
-                                                <label className="flex items-center gap-4 cursor-pointer group">
-                                                    <div className="relative">
-                                                        <input 
-                                                            type="checkbox" 
-                                                            checked={editingClient.allowApiListing}
-                                                            onChange={(e) => setEditingClient({...editingClient, allowApiListing: e.target.checked})}
-                                                            className="peer sr-only"
-                                                        />
-                                                        <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-indigo-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-xs font-black text-gray-900 flex items-center gap-2">
-                                                            <Zap className={`w-3.5 h-3.5 ${editingClient.allowApiListing ? 'text-indigo-600' : 'text-gray-400'}`} />
-                                                            API LISTING
-                                                        </span>
-                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable High-Speed Direct API Publishing</span>
-                                                    </div>
-                                                </label>
+                                        <div className="space-y-8">
+                                            {/* Multi-Agent Assignment Section */}
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Assign Agent to Client</h4>
+                                                    <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{editingClient.assignedAgents?.length || 0} Agents Assigned</span>
+                                                </div>
 
-                                                <label className="flex items-center gap-4 cursor-pointer group">
-                                                    <div className="relative">
-                                                        <input 
-                                                            type="checkbox" 
-                                                            checked={editingClient.allowExtensionListing}
-                                                            onChange={(e) => setEditingClient({...editingClient, allowExtensionListing: e.target.checked})}
-                                                            className="peer sr-only"
-                                                        />
-                                                        <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-emerald-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-xs font-black text-gray-900 flex items-center gap-2">
-                                                            <ExternalLink className={`w-3.5 h-3.5 ${editingClient.allowExtensionListing ? 'text-emerald-600' : 'text-gray-400'}`} />
-                                                            EXTENSION LISTING
-                                                        </span>
-                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable Manual Chrome Extension Integration</span>
-                                                    </div>
-                                                </label>
-
-                                                <label className="flex items-center gap-4 cursor-pointer group">
-                                                    <div className="relative">
-                                                        <input 
-                                                            type="checkbox" 
-                                                            checked={editingClient.allowAiFetching}
-                                                            onChange={(e) => setEditingClient({...editingClient, allowAiFetching: e.target.checked})}
-                                                            className="peer sr-only"
-                                                        />
-                                                        <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-fuchsia-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-xs font-black text-gray-900 flex items-center gap-2">
-                                                            <Sparkles className={`w-3.5 h-3.5 ${editingClient.allowAiFetching ? 'text-fuchsia-600' : 'text-gray-400'}`} />
-                                                            AI FETCHING
-                                                        </span>
-                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable Computer Vision & AI Product Detection</span>
-                                                    </div>
-                                                </label>
-
-                                                <label className="flex items-center gap-4 cursor-pointer group">
-                                                    <div className="relative">
-                                                        <input 
-                                                            type="checkbox" 
-                                                            checked={editingClient.allowEbayImport}
-                                                            onChange={(e) => setEditingClient({...editingClient, allowEbayImport: e.target.checked})}
-                                                            className="peer sr-only"
-                                                        />
-                                                        <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
-                                                    </div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-xs font-black text-gray-900 flex items-center gap-2">
-                                                            <LinkIcon className={`w-3.5 h-3.5 ${editingClient.allowEbayImport ? 'text-blue-600' : 'text-gray-400'}`} />
-                                                            EBAY LINK IMPORT
-                                                        </span>
-                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable Direct URL Marketplace Scraper</span>
-                                                    </div>
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        {/* Business Policies (Auto-Apply) */}
-                                        <div className="space-y-4">
-                                            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Business Policies</h4>
-                                            <div className="grid grid-cols-1 gap-4">
-                                                {[
-                                                    { label: 'Fulfillment', key: 'fulfillment', icon: Zap, options: policies.fulfillment, idField: 'fulfillmentPolicyId' },
-                                                    { label: 'Payment', key: 'payment', icon: Database, options: policies.payment, idField: 'paymentPolicyId' },
-                                                    { label: 'Returns', key: 'returns', icon: RefreshCw, options: policies.returns, idField: 'returnPolicyId' },
-                                                    { label: 'Location', key: 'location', icon: Globe, options: policies.locations, idField: 'merchantLocationKey' }
-                                                ].map((pol) => (
-                                                    <div key={pol.label} className="space-y-1.5">
-                                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">{pol.label} Policy</label>
-                                                        <CustomSelect
-                                                            icon={pol.icon}
-                                                            placeholder={isFetchingPolicies ? 'Fetching...' : `Select...`}
-                                                            options={pol.options.map(o => ({
-                                                                label: o.name || o.merchantLocationKey,
-                                                                value: o[pol.idField],
-                                                                description: o.description || (o.address ? `${o.address.city}, ${o.address.stateOrProvince}` : '')
-                                                            }))}
-                                                            value={editingClient.defaultPolicies?.[pol.key] ? {
-                                                                label: editingClient.defaultPolicies[pol.key].name || editingClient.defaultPolicies[pol.key].merchantLocationKey,
-                                                                value: editingClient.defaultPolicies[pol.key][pol.idField]
-                                                            } : null}
-                                                            onSelect={(val) => {
-                                                                const selected = pol.options.find(o => o[pol.idField] === val);
-                                                                setEditingClient({
-                                                                    ...editingClient,
-                                                                    defaultPolicies: { ...editingClient.defaultPolicies, [pol.key]: selected }
-                                                                });
+                                                <div className="bg-gray-50/50 p-5 rounded-[2rem] border border-gray-100 space-y-4">
+                                                    <div className="space-y-2">
+                                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Find & Add Agents</label>
+                                                        <MultiAgentSelect 
+                                                            agents={agents}
+                                                            selectedIds={editingClient.assignedAgents || []}
+                                                            onToggle={(id) => {
+                                                                const current = editingClient.assignedAgents || [];
+                                                                const next = current.includes(id) ? current.filter(cid => cid !== id) : [...current, id];
+                                                                setEditingClient({ ...editingClient, assignedAgents: next });
                                                             }}
                                                         />
                                                     </div>
-                                                ))}
+
+                                                    <div className="space-y-2">
+                                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Active Workforce</label>
+                                                        <div className="min-h-[48px] p-2 bg-white border border-gray-100 rounded-xl flex flex-wrap gap-2 items-start">
+                                                            {editingClient.assignedAgents?.length > 0 ? (
+                                                                editingClient.assignedAgents.map(id => {
+                                                                    const agent = agents.find(a => a._id === id);
+                                                                    if (!agent) return null;
+                                                                    return (
+                                                                        <div key={id} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-lg shadow-sm animate-in zoom-in-95 duration-200">
+                                                                            <span className="text-[11px] font-bold text-gray-700">{agent.name}</span>
+                                                                            <button 
+                                                                                onClick={() => setEditingClient({ ...editingClient, assignedAgents: editingClient.assignedAgents.filter(cid => cid !== id) })}
+                                                                                className="p-0.5 hover:bg-rose-50 hover:text-rose-600 rounded transition-colors"
+                                                                            >
+                                                                                <X className="w-3 h-3" />
+                                                                            </button>
+                                                                        </div>
+                                                                    );
+                                                                })
+                                                            ) : (
+                                                                <div className="w-full py-2 text-center text-[10px] font-bold text-gray-400 italic">No agents assigned yet</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Business Policies (Auto-Apply) */}
+                                            <div className="space-y-4">
+                                                <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Business Policies</h4>
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    {[
+                                                        { label: 'Fulfillment', key: 'fulfillment', icon: Zap, options: policies.fulfillment, idField: 'fulfillmentPolicyId' },
+                                                        { label: 'Payment', key: 'payment', icon: Database, options: policies.payment, idField: 'paymentPolicyId' },
+                                                        { label: 'Returns', key: 'returns', icon: RefreshCw, options: policies.returns, idField: 'returnPolicyId' },
+                                                        { label: 'Location', key: 'location', icon: Globe, options: policies.locations, idField: 'merchantLocationKey' }
+                                                    ].map((pol) => (
+                                                        <div key={pol.label} className="space-y-1.5">
+                                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">{pol.label} Policy</label>
+                                                            <CustomSelect
+                                                                icon={pol.icon}
+                                                                placeholder={isFetchingPolicies ? 'Fetching...' : `Select...`}
+                                                                options={pol.options.map(o => ({
+                                                                    label: o.name || o.merchantLocationKey,
+                                                                    value: o[pol.idField],
+                                                                    description: o.description || (o.address ? `${o.address.city}, ${o.address.stateOrProvince}` : '')
+                                                                }))}
+                                                                value={editingClient.defaultPolicies?.[pol.key] ? {
+                                                                    label: editingClient.defaultPolicies[pol.key].name || editingClient.defaultPolicies[pol.key].merchantLocationKey,
+                                                                    value: editingClient.defaultPolicies[pol.key][pol.idField]
+                                                                } : null}
+                                                                onSelect={(val) => {
+                                                                    const selected = pol.options.find(o => o[pol.idField] === val);
+                                                                    setEditingClient({
+                                                                        ...editingClient,
+                                                                        defaultPolicies: { ...editingClient.defaultPolicies, [pol.key]: selected }
+                                                                    });
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-8">
+                                            {/* Listing Channel Controls */}
+                                            <div className="space-y-4">
+                                                <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Listing Permissions</h4>
+                                                <div className="bg-gray-50/50 p-5 rounded-[2rem] border border-gray-100 space-y-4">
+                                                    <label className="flex items-center gap-4 cursor-pointer group">
+                                                        <div className="relative">
+                                                            <input 
+                                                                type="checkbox" 
+                                                                checked={editingClient.allowApiListing}
+                                                                onChange={(e) => setEditingClient({...editingClient, allowApiListing: e.target.checked})}
+                                                                className="peer sr-only"
+                                                            />
+                                                            <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-indigo-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-black text-gray-900 flex items-center gap-2">
+                                                                <Zap className={`w-3.5 h-3.5 ${editingClient.allowApiListing ? 'text-indigo-600' : 'text-gray-400'}`} />
+                                                                API LISTING
+                                                            </span>
+                                                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable High-Speed Direct API Publishing</span>
+                                                        </div>
+                                                    </label>
+
+                                                    <label className="flex items-center gap-4 cursor-pointer group">
+                                                        <div className="relative">
+                                                            <input 
+                                                                type="checkbox" 
+                                                                checked={editingClient.allowExtensionListing}
+                                                                onChange={(e) => setEditingClient({...editingClient, allowExtensionListing: e.target.checked})}
+                                                                className="peer sr-only"
+                                                            />
+                                                            <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-emerald-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-black text-gray-900 flex items-center gap-2">
+                                                                <ExternalLink className={`w-3.5 h-3.5 ${editingClient.allowExtensionListing ? 'text-emerald-600' : 'text-gray-400'}`} />
+                                                                EXTENSION LISTING
+                                                            </span>
+                                                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable Manual Chrome Extension Integration</span>
+                                                        </div>
+                                                    </label>
+
+                                                    <label className="flex items-center gap-4 cursor-pointer group">
+                                                        <div className="relative">
+                                                            <input 
+                                                                type="checkbox" 
+                                                                checked={editingClient.allowAiFetching}
+                                                                onChange={(e) => setEditingClient({...editingClient, allowAiFetching: e.target.checked})}
+                                                                className="peer sr-only"
+                                                            />
+                                                            <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-fuchsia-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-black text-gray-900 flex items-center gap-2">
+                                                                <Sparkles className={`w-3.5 h-3.5 ${editingClient.allowAiFetching ? 'text-fuchsia-600' : 'text-gray-400'}`} />
+                                                                AI FETCHING
+                                                            </span>
+                                                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable Computer Vision & AI Product Detection</span>
+                                                        </div>
+                                                    </label>
+
+                                                    <label className="flex items-center gap-4 cursor-pointer group">
+                                                        <div className="relative">
+                                                            <input 
+                                                                type="checkbox" 
+                                                                checked={editingClient.allowEbayImport}
+                                                                onChange={(e) => setEditingClient({...editingClient, allowEbayImport: e.target.checked})}
+                                                                className="peer sr-only"
+                                                            />
+                                                            <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-black text-gray-900 flex items-center gap-2">
+                                                                <LinkIcon className={`w-3.5 h-3.5 ${editingClient.allowEbayImport ? 'text-blue-600' : 'text-gray-400'}`} />
+                                                                EBAY LINK IMPORT
+                                                            </span>
+                                                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable Direct URL Marketplace Scraper</span>
+                                                        </div>
+                                                    </label>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

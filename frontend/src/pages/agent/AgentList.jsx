@@ -3,12 +3,18 @@ import { UserPlus, Users, Search, Mail, Key, ShieldCheck, Trash2, Edit2, Zap, X,
 import { getAgents, createAgent, deleteAgent, updateAgent } from '../../services/api';
 import { useToast } from '../../components/Toast';
 
+import AgentDashboard from './agent_dashboard';
+import ProductListAgent from './ProductListAgent';
+
 const AgentList = () => {
     const { addToast, showConfirm } = useToast();
     const [agents, setAgents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showViewModal, setShowViewModal] = useState(false);
+    const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' or 'inventory'
+    const [viewingAgent, setViewingAgent] = useState(null);
     const [editingAgent, setEditingAgent] = useState(null);
     const [newAgent, setNewAgent] = useState({ agentId: '', password: '', name: '' });
     const [showNewPassword, setShowNewPassword] = useState(false);
@@ -27,6 +33,12 @@ const AgentList = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleViewAgent = (agent) => {
+        setViewingAgent(agent);
+        setActiveTab('dashboard');
+        setShowViewModal(true);
     };
 
     const handleAddAgent = async (e) => {
@@ -135,9 +147,12 @@ const AgentList = () => {
                                             <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
                                                 {agent.name.charAt(0)}
                                             </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-gray-900">{agent.name}</p>
-                                                <p className="text-[10px] font-mono text-gray-400 uppercase">{agent.agentId}</p>
+                                            <div onClick={() => handleViewAgent(agent)} className="cursor-pointer group/name">
+                                                <p className="text-sm font-bold text-gray-900 group-hover/name:text-indigo-600 transition-colors">{agent.name}</p>
+                                                <p className="text-[10px] font-mono text-gray-400 uppercase flex items-center gap-2">
+                                                    {agent.agentId}
+                                                    <span className="opacity-0 group-hover/name:opacity-100 text-[9px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 px-1.5 py-0.5 rounded transition-all">View Portal</span>
+                                                </p>
                                             </div>
                                         </div>
                                     </td>
@@ -309,6 +324,76 @@ const AgentList = () => {
                                 Update Agent Info
                             </button>
                         </form>
+                    </div>
+                </div>
+            )}
+            {/* Agent View Modal */}
+            {showViewModal && viewingAgent && (
+                <div 
+                    className="fixed inset-0 z-[150] flex items-center justify-center p-4 md:p-8 bg-black/70 backdrop-blur-md animate-in fade-in duration-300"
+                    onClick={() => setShowViewModal(false)}
+                >
+                    <div 
+                        className="bg-white rounded-[3rem] w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col scale-in-center animate-in zoom-in-95 duration-500"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Modal Header */}
+                        <div className="p-8 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white shrink-0">
+                            <div className="flex items-center gap-4">
+                                <div className="p-4 bg-indigo-600 rounded-2xl text-white shadow-xl shadow-indigo-100">
+                                    <Users className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black text-gray-900 tracking-tight">Agent Portal Preview</h3>
+                                    <p className="text-xs text-indigo-500 font-bold uppercase tracking-[0.2em] mt-1">Viewing: {viewingAgent.name} ({viewingAgent.agentId})</p>
+                                </div>
+                            </div>
+
+                            {/* Tab Switcher */}
+                            <div className="flex p-1.5 bg-gray-100 rounded-2xl">
+                                <button 
+                                    onClick={() => setActiveTab('dashboard')}
+                                    className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'dashboard' ? 'bg-white text-indigo-600 shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
+                                >
+                                    Dashboard
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('inventory')}
+                                    className={`px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'inventory' ? 'bg-white text-indigo-600 shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
+                                >
+                                    Inventory
+                                </button>
+                            </div>
+
+                            <button onClick={() => setShowViewModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors absolute top-6 right-6 md:static">
+                                <X className="w-6 h-6 text-gray-400" />
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="flex-1 overflow-y-auto p-8 md:p-12 no-scrollbar bg-gray-50/30">
+                            {activeTab === 'dashboard' ? (
+                                <AgentDashboard 
+                                    scopedAgentId={viewingAgent._id} 
+                                    scopedAgentName={viewingAgent.name} 
+                                />
+                            ) : (
+                                <ProductListAgent 
+                                    scopedAgentId={viewingAgent._id} 
+                                    viewOnly={true} 
+                                />
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="p-6 border-t border-gray-100 bg-white flex justify-center shrink-0">
+                            <button 
+                                onClick={() => setShowViewModal(false)}
+                                className="px-12 py-4 bg-gray-900 text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest shadow-xl hover:translate-y-[-2px] transition-all active:scale-95"
+                            >
+                                Close Preview
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

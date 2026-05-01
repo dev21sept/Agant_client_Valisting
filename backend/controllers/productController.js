@@ -198,18 +198,18 @@ exports.createProduct = async (req, res) => {
 exports.getAllProducts = async (req, res) => {
     console.log(`[API] GET /products called (DB State: ${mongoose.connection.readyState})`);
 
-    // If disconnected, try to connect instead of just failing
-    if (mongoose.connection.readyState === 0) {
-        const connectMongoDB = require('../config/mongodb');
-        connectMongoDB(); // Fire and forget, Mongoose will buffer
-    }
-
     try {
         console.log(`[MongoDB] Querying products with 10s timeout...`);
         
         let query = {};
+        
+        // If agent, restricted to their own products
         if (req.user && req.user.role === 'agent') {
             query.agentId = req.user.id;
+        } 
+        // If admin/workforce, they can optionally filter by agentId
+        else if (req.query.agentId) {
+            query.agentId = req.query.agentId;
         }
 
         const products = await Product.find(query)

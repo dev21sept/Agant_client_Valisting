@@ -209,8 +209,14 @@ exports.getAllProducts = async (req, res) => {
         console.log(`[MongoDB] Querying products with 10s timeout...`);
         
         let query = {};
+        
+        // If it's an agent logged in, strictly show their own products
         if (req.user && req.user.role === 'agent') {
             query.agentId = req.user.id;
+        } 
+        // If it's an admin/workforce, they can filter by agentId via query param (used in AgentViewModal)
+        else if (req.query.agentId) {
+            query.agentId = req.query.agentId;
         }
 
         const products = await Product.find(query)
