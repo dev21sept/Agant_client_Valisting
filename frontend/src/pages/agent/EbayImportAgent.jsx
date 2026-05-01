@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Link as LinkIcon, AlertCircle, RefreshCcw, Cpu, Zap, Globe, Search, PlusSquare, ArrowLeft, Loader2 } from 'lucide-react';
-import ImportProductForm from '../components/ImportProductForm';
-import { fetchEbayProduct, createProduct, listProduct, scrapeEbayDescription } from '../services/api';
-import { Card, Button } from '../components/ui';
+import ImportProductForm from '../../components/ImportProductForm';
+import { fetchEbayProduct, createProduct, listProduct, scrapeEbayDescription } from '../../services/api_agent';
+import { Card, Button } from '../../components/ui';
 
-import { useToast } from '../components/Toast';
+import { useToast } from '../../components/Toast';
 
 const EbayImport = ({ user }) => {
+    if (user?.role === 'agent' && user.allowEbayImport === false) {
+        return <Navigate to="/" replace />;
+    }
     const navigate = useNavigate();
     const { addToast } = useToast();
     const [ebayUrl, setEbayUrl] = useState('');

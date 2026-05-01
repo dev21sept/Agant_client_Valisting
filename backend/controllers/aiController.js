@@ -33,7 +33,8 @@ exports.analyzeProductImage = async (req, res) => {
             customTemplateText = '',
             gender = 'Unisex',
             condition = 'New',
-            selectedRule = null
+            selectedRule = null,
+            user = null
         } = req.body;
 
         const ruleTitleSequence = normalizeStringList(selectedRule?.title_sequence);
@@ -190,18 +191,18 @@ exports.analyzeProductImage = async (req, res) => {
                 const appToken = await ebayApiService.getAppToken();
                 const aspectsData = await ebayApiService.getItemAspectsForCategory(appToken, categoryId);
 
-               // eBay aspects might use different names. We look for anything related to "Condition"
-            const conditionAspect = aspectsData.aspects.find(a => 
-                a.localizedAspectName.toLowerCase().includes('condition') || 
-                a.localizedAspectName.toLowerCase() === 'cond'
-            );
+                // eBay aspects might use different names. We look for anything related to "Condition"
+                const conditionAspect = aspectsData.aspects.find(a =>
+                    a.localizedAspectName.toLowerCase().includes('condition') ||
+                    a.localizedAspectName.toLowerCase() === 'cond'
+                );
 
-            if (conditionAspect && conditionAspect.aspectValues) {
-                console.log(`[EBAY] Found ${conditionAspect.aspectValues.length} condition values for category ${categoryId}`);
-                // Note: This logic is for internal reference/validation
-            } else {
-                console.warn(`[EBAY] Aspect 'Condition' not found in features for ${categoryId}. Aspects found: ${aspectsData.aspects.map(a => a.localizedAspectName).join(', ')}`);
-            }
+                if (conditionAspect && conditionAspect.aspectValues) {
+                    console.log(`[EBAY] Found ${conditionAspect.aspectValues.length} condition values for category ${categoryId}`);
+                    // Note: This logic is for internal reference/validation
+                } else {
+                    console.warn(`[EBAY] Aspect 'Condition' not found in features for ${categoryId}. Aspects found: ${aspectsData.aspects.map(a => a.localizedAspectName).join(', ')}`);
+                }
 
                 if (aspectsData && aspectsData.aspects) {
                     officialAspects = aspectsData.aspects.map(aspect => ({
@@ -307,7 +308,16 @@ CRITICAL: DO NOT include 'condition_name' or any related state. This will be fet
 
         // --- DYNAMIC SKU GENERATION ---
         const productCount = await Product.countDocuments();
-        finalData.sku = `VA${productCount + 1}A`;
+        let skuPrefix = 'VA'; // Default
+        if (user) {
+            if (user.role === 'admin') {
+                skuPrefix = 'ADM';
+            } else if (user.role === 'agent' && user.agentId) {
+                skuPrefix = user.agentId.toUpperCase();
+            }
+        }
+        const randomSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+        finalData.sku = `${skuPrefix}-${productCount + 1}-${randomSuffix}`;
 
         const aiResponseParts = finalData.title_parts || {};
         const standardizedParts = {};
@@ -388,9 +398,9 @@ exports.saveAiListing = async (req, res) => {
             });
 
             if (existingProduct) {
-                return res.status(400).json({ 
-                    error: 'DUPLICATE', 
-                    message: 'A product with these exact images already exists in your inventory.' 
+                return res.status(400).json({
+                    error: 'DUPLICATE',
+                    message: 'A product with these exact images already exists in your inventory.'
                 });
             }
         }

@@ -79,7 +79,7 @@ const SearchableDropdown = ({ value, onSelect, options = [], placeholder = 'Sele
     );
 };
 
-const AiFetchSection = ({ onDataFetched, onAnalyzingStart }) => {
+const AiFetchSection = ({ user, onDataFetched, onAnalyzingStart }) => {
     const [imageUrls, setImageUrls] = useState(['']);
     const [localPreviews, setLocalPreviews] = useState([]);
     const [platform] = useState('ebay');
@@ -93,6 +93,18 @@ const AiFetchSection = ({ onDataFetched, onAnalyzingStart }) => {
     const fileInputRef = useRef(null);
 
     useEffect(() => {
+        if (user?.role === 'agent' && user.defaultRules) {
+            const clientRule = {
+                _id: 'client_rule',
+                rule_name: 'Client Master Config',
+                ...user.defaultRules
+            };
+            setRules([clientRule]);
+            setSelectedRuleId('client_rule');
+            setLoadingRules(false);
+            return;
+        }
+
         const loadRules = async () => {
             try {
                 const response = await getFetchRules();
@@ -108,7 +120,7 @@ const AiFetchSection = ({ onDataFetched, onAnalyzingStart }) => {
             }
         };
         loadRules();
-    }, []);
+    }, [user]);
 
     const selectedRule = useMemo(
         () => rules.find((rule) => rule._id === selectedRuleId) || null,
@@ -208,7 +220,8 @@ const AiFetchSection = ({ onDataFetched, onAnalyzingStart }) => {
                 condition: selectedCondition?.label || 'New',
                 gender,
                 platform,
-                selectedRule: selectedRulePayload
+                selectedRule: selectedRulePayload,
+                user: { role: user?.role, agentId: user?.agentId }
             });
 
             if (result.success) {
@@ -272,47 +285,49 @@ const AiFetchSection = ({ onDataFetched, onAnalyzingStart }) => {
 
     return (
         <div className="card p-6 md:p-8 space-y-6 max-w-7xl mx-auto bg-white border border-gray-100 shadow-sm rounded-3xl">
-            <div className="border border-indigo-100 bg-indigo-50/40 rounded-2xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-[11px] font-black text-indigo-900 uppercase tracking-[0.2em]">AI Rule Setup</h3>
-                    <span className="text-[10px] text-indigo-600 font-bold">{loadingRules ? 'Loading...' : `${rules.length} rules`}</span>
-                </div>
+            {(!user || user.role === 'admin') && (
+                <div className="border border-indigo-100 bg-indigo-50/40 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-[11px] font-black text-indigo-900 uppercase tracking-[0.2em]">AI Rule Setup</h3>
+                        <span className="text-[10px] text-indigo-600 font-bold">{loadingRules ? 'Loading...' : `${rules.length} rules`}</span>
+                    </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Select Rule</label>
-                        <SearchableDropdown
-                            value={selectedRule?.rule_name || ''}
-                            onSelect={(opt) => setSelectedRuleId(opt.id)}
-                            options={ruleOptions}
-                            placeholder={rules.length ? 'Choose rule' : 'No rules found in Settings'}
-                            disabled={loadingRules || rules.length === 0}
-                        />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Select Rule</label>
+                            <SearchableDropdown
+                                value={selectedRule?.rule_name || ''}
+                                onSelect={(opt) => setSelectedRuleId(opt.id)}
+                                options={ruleOptions}
+                                placeholder={rules.length ? 'Choose rule' : 'No rules found in Settings'}
+                                disabled={loadingRules || rules.length === 0}
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Product Condition</label>
+                            <SearchableDropdown
+                                value={selectedCondition?.label || ''}
+                                onSelect={(opt) => setSelectedCondition(opt)}
+                                options={EBAY_CONDITIONS}
+                                placeholder="Select condition"
+                            />
+                        </div>
                     </div>
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Product Condition</label>
-                        <SearchableDropdown
-                            value={selectedCondition?.label || ''}
-                            onSelect={(opt) => setSelectedCondition(opt)}
-                            options={EBAY_CONDITIONS}
-                            placeholder="Select condition"
-                        />
-                    </div>
-                </div>
 
-                {selectedRule && (
-                    <div className="flex flex-wrap gap-2 pt-1">
-                        <span className="px-2.5 py-1 bg-white border border-indigo-100 rounded-lg text-[10px] font-bold text-indigo-700">
-                            Sequence: {(selectedRule.title_sequence || []).slice(0, 3).join(' | ')}
-                            {(selectedRule.title_sequence || []).length > 3 ? ' ...' : ''}
-                        </span>
-                        <span className="px-2.5 py-1 bg-white border border-indigo-100 rounded-lg text-[10px] font-bold text-indigo-700">
-                            Note: {(selectedRule.custom_condition_note || selectedRule.condition_note || '-').slice(0, 40)}
-                            {((selectedRule.custom_condition_note || selectedRule.condition_note || '').length > 40) ? '...' : ''}
-                        </span>
-                    </div>
-                )}
-            </div>
+                    {selectedRule && (
+                        <div className="flex flex-wrap gap-2 pt-1">
+                            <span className="px-2.5 py-1 bg-white border border-indigo-100 rounded-lg text-[10px] font-bold text-indigo-700">
+                                Sequence: {(selectedRule.title_sequence || []).slice(0, 3).join(' | ')}
+                                {(selectedRule.title_sequence || []).length > 3 ? ' ...' : ''}
+                            </span>
+                            <span className="px-2.5 py-1 bg-white border border-indigo-100 rounded-lg text-[10px] font-bold text-indigo-700">
+                                Note: {(selectedRule.custom_condition_note || selectedRule.condition_note || '-').slice(0, 40)}
+                                {((selectedRule.custom_condition_note || selectedRule.condition_note || '').length > 40) ? '...' : ''}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="space-y-4">
                 <div className="flex gap-2">

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ShoppingBag, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, ShoppingBag, ArrowRight, CheckCircle2, User } from 'lucide-react';
+import { loginAgent } from '../services/api';
 
 const AdminLogin = ({ onLogin }) => {
     const [email, setEmail] = useState('');
@@ -13,14 +14,25 @@ const AdminLogin = ({ onLogin }) => {
         setError('');
         setIsSubmitting(true);
 
-        setTimeout(() => {
+        try {
+            // 1. Check for Admin Hardcoded Login (as requested/existing)
             if (email === 'valisting@gmail.com' && password === 'admin123') {
-                onLogin({ role: 'admin', email });
-            } else {
-                setError('Authentication failed. Check your data.');
-                setIsSubmitting(false);
+                onLogin({ role: 'admin', email, id: 'admin_root' });
+                return;
             }
-        }, 800);
+
+            // 2. Fallback to Agent Login from DB
+            const response = await loginAgent({ agentId: email, password });
+            if (response.success) {
+                onLogin({ ...response.user, role: 'agent' });
+            } else {
+                setError('Invalid credentials.');
+            }
+        } catch (err) {
+            setError(err.response?.data?.error || 'Authentication failed.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -95,8 +107,8 @@ const AdminLogin = ({ onLogin }) => {
                     className="w-full max-w-sm"
                 >
                     <div className="mb-14">
-                        <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Admin Sign In</h2>
-                        <p className="text-sm text-gray-400 font-medium tracking-tight">Enter your administrative power-key below.</p>
+                        <h2 className="text-3xl font-black text-gray-900 mb-3 tracking-tight">Sign In</h2>
+                        <p className="text-sm text-gray-400 font-medium tracking-tight">Enter your credentials to access the portal.</p>
                     </div>
 
                     {/* SHADOWED LOGIN BOX WITH BORDER */}
@@ -110,16 +122,16 @@ const AdminLogin = ({ onLogin }) => {
                             )}
 
                             <div className="space-y-2">
-                                <label className="text-[11px] font-black text-gray-900 uppercase tracking-widest ml-1">Email Address</label>
+                                <label className="text-[11px] font-black text-gray-900 uppercase tracking-widest ml-1">Agent ID or Email</label>
                                 <div className="relative group">
-                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-300 group-focus-within:text-indigo-600 transition-colors" />
+                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-300 group-focus-within:text-indigo-600 transition-colors" />
                                     <input 
-                                        type="email" 
+                                        type="text" 
                                         required 
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="w-full bg-gray-50 border border-gray-100 focus:border-indigo-600 focus:bg-white rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-gray-900 placeholder:text-gray-300 transition-all outline-none" 
-                                        placeholder="example@mail.com"
+                                        placeholder="Enter ID or Email"
                                     />
                                 </div>
                             </div>

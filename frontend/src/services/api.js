@@ -9,6 +9,27 @@ const api = axios.create({
     timeout: 120000
 });
 
+// Request Interceptor (Original / Clean)
+api.interceptors.request.use((config) => {
+    const sessionStr = localStorage.getItem('va_admin_session');
+    if (sessionStr) {
+        const session = JSON.parse(sessionStr);
+        // Identify the user role
+        const vasterRole = localStorage.getItem('vaster_role') || session.role;
+        
+        if (session.role === 'agent') {
+            config.headers['x-user-id'] = session.id;
+            config.headers['x-user-role'] = 'agent';
+        } else if (vasterRole === 'workforce') {
+            config.headers['x-user-id'] = session.id || 'admin_root';
+            config.headers['x-user-role'] = 'workforce';
+        }
+    }
+    return config;
+}, (error) => {
+    return Promise.reject(error);
+});
+
 // Simple In-Memory Cache
 const cache = {
     policies: null,
@@ -153,7 +174,74 @@ export const deleteFetchRule = async (id) => {
     return response.data;
 };
 
+// --- AGENT & CLIENT MANAGEMENT ---
+
+export const loginAgent = async (data) => {
+    const response = await api.post('/agents-clients/agents/login', data);
+    return response.data;
+};
+
+export const getAgents = async () => {
+    const response = await api.get('/agents-clients/agents');
+    return response.data;
+};
+
+export const createAgent = async (data) => {
+    const response = await api.post('/agents-clients/agents', data);
+    return response.data;
+};
+export const getAgentPerformance = async (agentId) => {
+    const response = await api.get(`/agents-clients/agents/${agentId}/performance`);
+    return response.data;
+};
+
+export const deleteAgent = async (id) => {
+    const response = await api.delete(`/agents-clients/agents/${id}`);
+    return response.data;
+};
+
+export const updateAgent = async (id, data) => {
+    const response = await api.put(`/agents-clients/agents/${id}`, data);
+    return response.data;
+};
+
+export const createClient = async (data) => {
+    const response = await api.post('/agents-clients/clients', data);
+    return response.data;
+};
+
+export const deleteClient = async (id) => {
+    const response = await api.delete(`/agents-clients/clients/${id}`);
+    return response.data;
+};
+
+export const updateClient = async (id, data) => {
+    const response = await api.put(`/agents-clients/clients/${id}`, data);
+    return response.data;
+};
+
+export const getClients = async () => {
+    const response = await api.get('/agents-clients/clients');
+    return response.data;
+};
+
+export const disconnectClientEbay = async (id) => {
+    const response = await api.post(`/agents-clients/clients/${id}/disconnect`);
+    return response.data;
+};
+
+export const getClientPolicies = async (id) => {
+    const response = await api.get(`/agents-clients/clients/${id}/policies`);
+    return response.data;
+};
+
+export const getAdminStats = async () => {
+    const response = await api.get('/agents-clients/dashboard/admin-stats');
+    return response.data;
+};
+
 export const getSavedConditionNotes = async () => {
     const response = await api.get('/fetch-rules/condition-notes');
     return response.data;
 };
+

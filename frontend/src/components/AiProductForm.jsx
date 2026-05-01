@@ -343,7 +343,7 @@ const ConditionNotesSection = ({ value = "", onChange }) => {
     );
 };
 
-const AiProductForm = ({ initialData, onSubmit, isFetching, onReset, onUpdate }) => {
+const AiProductForm = ({ initialData, onSubmit, isFetching, onReset, onUpdate, user }) => {
 
     const [formData, setFormData] = useState({
         title: '',
@@ -352,20 +352,21 @@ const AiProductForm = ({ initialData, onSubmit, isFetching, onReset, onUpdate })
         categoryId: '',
         brand: '',
         condition_name: '',
+        condition_notes: user?.defaultRules?.custom_condition_note || user?.defaultRules?.condition_note || '',
         sku: '',
         retail_price: '',
         selling_price: '0.00',
         images: [],
         item_specifics: {},
         officialAspects: [],
-        fulfillment_policy: null,
-        payment_policy: null,
-        return_policy: null,
-        inventory_location: null,
+        fulfillment_policy: user?.defaultPolicies?.fulfillment || null,
+        payment_policy: user?.defaultPolicies?.payment || null,
+        return_policy: user?.defaultPolicies?.return || null,
+        inventory_location: user?.defaultPolicies?.location || null,
         source: 'ai',
         title_parts: {},
-        structure: initialData?.structure || ['Brand', 'Product Type', 'Model / Series', 'Material', 'Key Features', 'Size'],
-        title_sequence: ['Brand', 'Product Type', 'Model / Series', 'Material', 'Key Features', 'Size', 'Color', 'Style / Use Case', 'Gender / Department'],
+        structure: initialData?.structure || user?.defaultRules?.title_sequence || ['Brand', 'Product Type', 'Model / Series', 'Material', 'Key Features', 'Size'],
+        title_sequence: user?.defaultRules?.title_sequence || ['Brand', 'Product Type', 'Model / Series', 'Material', 'Key Features', 'Size', 'Color', 'Style / Use Case', 'Gender / Department'],
         lastAutoTitle: '',
         applied_rule: null
     });
@@ -1197,7 +1198,7 @@ const AiProductForm = ({ initialData, onSubmit, isFetching, onReset, onUpdate })
                     </button>
 
                     <div className="flex items-center gap-3">
-                        {/* 1. SAVE ITEM */}
+                        {/* 1. SAVE ITEM - Always allowed for both */}
                         <button
                             type="button" disabled={isFetching}
                             onClick={async (e) => {
@@ -1209,41 +1210,47 @@ const AiProductForm = ({ initialData, onSubmit, isFetching, onReset, onUpdate })
                             <Save className="w-4 h-4" /> Save Item
                         </button>
 
-                        {/* 2. EXTENSION */}
-                        <button
-                            type="button" disabled={isFetching}
-                            onClick={async () => {
-                                const ok = await showConfirm("Send this product data to eBay Extension?");
-                                if (ok) window.postMessage({ type: 'EbayAutoLister_SendData', payload: formData }, "*");
-                            }}
-                            className="px-6 py-3 bg-orange-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-orange-600 transition-all shadow-lg active:scale-95"
-                        >
-                            <Layers className="w-4 h-4 text-white" /> Extension
-                        </button>
+                        {/* 2. EXTENSION - Only if Admin or Permission granted */}
+                        {(!user || user.role === 'admin' || user.allowExtensionListing) && (
+                            <button
+                                type="button" disabled={isFetching}
+                                onClick={async () => {
+                                    const ok = await showConfirm("Send this product data to eBay Extension?");
+                                    if (ok) window.postMessage({ type: 'EbayAutoLister_SendData', payload: formData }, "*");
+                                }}
+                                className="px-6 py-3 bg-orange-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-orange-600 transition-all shadow-lg active:scale-95"
+                            >
+                                <Layers className="w-4 h-4 text-white" /> Extension
+                            </button>
+                        )}
 
-                        {/* 3. API LIST */}
-                        <button
-                            type="button" disabled={isFetching}
-                            onClick={async (e) => {
-                                const ok = await showConfirm("Are you sure you want to LIST this product directly to eBay via API?");
-                                if (ok) handlePreSubmit(e, true, false);
-                            }}
-                            className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-lg active:scale-95"
-                        >
-                            <Zap className="w-4 h-4 fill-yellow-300 text-yellow-300" /> API List
-                        </button>
+                        {/* 3. API LIST - Only if Admin or Permission granted */}
+                        {(!user || user.role === 'admin' || user.allowApiListing) && (
+                            <button
+                                type="button" disabled={isFetching}
+                                onClick={async (e) => {
+                                    const ok = await showConfirm("Are you sure you want to LIST this product directly to eBay via API?");
+                                    if (ok) handlePreSubmit(e, true, false);
+                                }}
+                                className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-lg active:scale-95"
+                            >
+                                <Zap className="w-4 h-4 fill-yellow-300 text-yellow-300" /> API List
+                            </button>
+                        )}
 
-                        {/* 4. SAVE DRAFT */}
-                        <button
-                            type="button" disabled={isFetching}
-                            onClick={async (e) => {
-                                const ok = await showConfirm("Are you sure you want to save this as a DRAFT on eBay?");
-                                if (ok) handlePreSubmit(e, false, true);
-                            }}
-                            className="px-6 py-3 bg-blue-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg active:scale-95"
-                        >
-                            <FileText className="w-4 h-4" /> Save Draft
-                        </button>
+                        {/* 4. SAVE DRAFT - Also requires API permission */}
+                        {(!user || user.role === 'admin' || user.allowApiListing) && (
+                            <button
+                                type="button" disabled={isFetching}
+                                onClick={async (e) => {
+                                    const ok = await showConfirm("Are you sure you want to save this as a DRAFT on eBay?");
+                                    if (ok) handlePreSubmit(e, false, true);
+                                }}
+                                className="px-6 py-3 bg-blue-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-blue-600 transition-all shadow-lg active:scale-95"
+                            >
+                                <FileText className="w-4 h-4" /> Save Draft
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

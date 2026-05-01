@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
-import AiProductForm from '../components/AiProductForm';
-import AiFetchSection from '../components/AiFetchSection';
-import { createProduct, listProduct } from '../services/api';
+import AiProductForm from '../../components/AiProductForm';
+import AiFetchSection from '../../components/AiFetchSection';
+import { createProduct, listProduct } from '../../services/api_agent';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { useToast } from '../components/Toast';
+import { useToast } from '../../components/Toast';
 
 const AiFetching = ({ user }) => {
+    if (user?.role === 'agent' && user.allowAiFetching === false) {
+        return <Navigate to="/" replace />;
+    }
     const navigate = useNavigate();
     const { showConfirm, addToast } = useToast();
     const [isFetching, setIsFetching] = useState(false);

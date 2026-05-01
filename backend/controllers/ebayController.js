@@ -142,10 +142,23 @@ exports.handleCallback = async (req, res) => {
     }
     try {
         const tokens = await ebayService.getUserToken(code, ruName);
-        
-        await saveSetting('ebay_access_token', tokens.access_token);
-        await saveSetting('ebay_refresh_token', tokens.refresh_token);
-        await saveSetting('ebay_token_expiry', (Date.now() + (tokens.expires_in * 1000)).toString());
+        const isClientAuth = state && state.startsWith('client_');
+        let targetClient = null;
+
+        if (isClientAuth) {
+            const clientId = state.split('_')[1];
+            const Client = require('../models/Client');
+            targetClient = await Client.findById(clientId);
+            if (targetClient) {
+                targetClient.ebayToken = tokens.access_token;
+                targetClient.ebayRefreshToken = tokens.refresh_token;
+                targetClient.ebayTokenExpiry = new Date(Date.now() + (tokens.expires_in * 1000));
+            }
+        } else {
+            await saveSetting('ebay_access_token', tokens.access_token);
+            await saveSetting('ebay_refresh_token', tokens.refresh_token);
+            await saveSetting('ebay_token_expiry', (Date.now() + (tokens.expires_in * 1000)).toString());
+        }
         
         // Fetch and save the seller's profile info
         try {
@@ -154,8 +167,13 @@ exports.handleCallback = async (req, res) => {
             if (profile) {
                 const { name, email } = extractSellerProfile(profile);
                 
-                if (name) await saveSetting('ebay_seller_name', name);
-                if (email) await saveSetting('ebay_seller_email', email);
+                if (isClientAuth && targetClient) {
+                    targetClient.ebayAccountName = name;
+                    await targetClient.save();
+                } else {
+                    if (name) await saveSetting('ebay_seller_name', name);
+                    if (email) await saveSetting('ebay_seller_email', email);
+                }
                 
                 console.log(`Connected to eBay account: ${name} (${email})`);
                 console.log('--- PRODUCTION OAUTH TOKENS SAVED TO MONGODB ---');
@@ -169,8 +187,8 @@ exports.handleCallback = async (req, res) => {
         // exports.syncInventory(tokens.access_token).catch(err => console.error('Initial inventory sync error:', err));
         // exports.syncOrders(tokens.access_token).catch(err => console.error('Initial orders sync error:', err));
 
-        const frontendUrl = (process.env.FRONTEND_URL ).trim().replace(/\/$/, '');
-        const redirectPath = state === 'products' ? '/products' : '/';
+        const frontendUrl = (process.env.FRONTEND_URL).trim().replace(/\/$/, '');
+        const redirectPath = isClientAuth ? '/clients' : (state === 'products' ? '/products' : '/');
         res.redirect(`${frontendUrl}${redirectPath}?ebay_auth=success`);
     } catch (error) {
         console.error('Callback Error:', error.response?.data || error.message);

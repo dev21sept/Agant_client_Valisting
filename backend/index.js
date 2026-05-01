@@ -17,6 +17,8 @@ const scraperRoutes = require('./routes/scraperRoutes');
 const listingRoutes = require('./routes/listingRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const fetchRuleRoutes = require('./routes/fetchRuleRoutes');
+const agentRoutes = require('./routes/agent_client_routes');
+const agentToolsRoutes = require('./routes/agent_tools_routes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,7 +27,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'x-user-role']
 }));
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
@@ -33,6 +35,12 @@ app.use(morgan('dev'));
 
 // Routes Initialization Logs
 console.log(`\n--- [SYSTEM] Initializing Modular Routes ---`);
+
+// Debug Logger
+app.use((req, res, next) => {
+    console.log(`[DEBUG] ${req.method} ${req.url}`);
+    next();
+});
 
 app.use('/api', productRoutes);
 console.log(`✅ [INIT] Product CRUD Routes Active`);
@@ -45,6 +53,10 @@ console.log(`✅ [INIT] AI Vision & Analysis Routes Active`);
 
 app.use('/api/scraper', scraperRoutes);
 console.log(`✅ [INIT] eBay Link Scraper Routes Active`);
+
+app.use('/api/agents-clients', agentRoutes);
+app.use('/api/agent-tools', agentToolsRoutes);
+console.log(`✅ [INIT] Agent & Client Management Routes Active`);
 
 app.use('/api/listing', listingRoutes);
 console.log(`✅ [INIT] Direct API Listing Routes Active`);

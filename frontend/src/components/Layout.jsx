@@ -19,7 +19,8 @@ import {
     Settings,
     HelpCircle,
     Package,
-    LogOut
+    LogOut,
+    Users
 } from 'lucide-react';
 
 import { useToast } from '../components/Toast';
@@ -29,20 +30,44 @@ const Layout = ({ children, onLogout, user }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [ebayStatus, setEbayStatus] = useState({ connected: false, sellerName: '' });
+    // Initialize from user.role or localStorage
+    // Initialize from localStorage view preference if Admin, otherwise use user.role
+    const [currentRole, setCurrentRole] = useState(() => {
+        if (user?.role === 'admin') {
+            return localStorage.getItem('vaster_role') || 'admin';
+        }
+        return user?.role || 'agent';
+    }); 
     const location = useLocation();
 
-    // Automatically collapse sidebar on Tool pages (Fetch/List)
+    // Automatically detect role and collapse sidebar on Tool pages
     useEffect(() => {
-        const isToolPage = location.pathname.includes('/ebay-import') || 
-                          location.pathname.includes('/ai-fetching') || 
-                          location.pathname.includes('/list/');
+        const path = location.pathname;
+        
+        // 1. If user is strictly an agent, enforce agent role
+        if (user?.role === 'agent') {
+            setCurrentRole('agent');
+            localStorage.setItem('vaster_role', 'agent');
+        } else {
+            // 2. Admin logic: Detect and set role based on path
+            const isAgentPath = path.includes('/agents') || path.includes('/clients') || path.includes('/agent-dashboard');
+            if (isAgentPath && currentRole !== 'agent') {
+                setCurrentRole('agent');
+            }
+            localStorage.setItem('vaster_role', currentRole);
+        }
+
+        // 3. Handle Sidebar collapse
+        const isToolPage = path.includes('/ebay-import') || 
+                          path.includes('/ai-fetching') || 
+                          path.includes('/list/');
         
         if (isToolPage) {
             setIsSidebarOpen(false);
         } else {
             setIsSidebarOpen(true);
         }
-    }, [location.pathname]);
+    }, [location.pathname, currentRole, user?.role]);
 
     useEffect(() => {
         const fetchStatus = async () => {
@@ -69,7 +94,7 @@ const Layout = ({ children, onLogout, user }) => {
         }
     };
 
-    const navGroups = [
+    const adminNav = [
         {
             id: 'manage',
             title: 'MANAGE',
@@ -94,6 +119,33 @@ const Layout = ({ children, onLogout, user }) => {
             ]
         },
     ];
+
+    const workforceNav = [
+        {
+            id: 'workforce-mgmt',
+            title: 'AGENT CLIENT ADMIN',
+            items: [
+                { name: 'Dashboard', path: '/agent-dashboard', icon: LayoutDashboard },
+                { name: 'Agents', path: '/agents', icon: User },
+                { name: 'Clients', path: '/clients', icon: Settings },
+            ]
+        }
+    ];
+
+    const agentNav = [
+        {
+            id: 'agent-tasks',
+            title: 'AGENT VIEW',
+            items: [
+                { name: 'Agent Dashboard', path: '/agent-dashboard', icon: LayoutDashboard },
+                { name: 'Client Inventory', path: '/products', icon: Package },
+            ]
+        }
+    ];
+
+    const navGroups = currentRole === 'admin' 
+        ? adminNav 
+        : (currentRole === 'workforce' ? workforceNav : agentNav);
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
@@ -134,8 +186,34 @@ const Layout = ({ children, onLogout, user }) => {
                     </button>
                 </div>
 
-                {/* eBay Connection Card */}
-                {isSidebarOpen && (
+                {/* 3-WAY ROLE SWITCHER - ONLY FOR ADMIN */}
+                {isSidebarOpen && user?.role === 'admin' && (
+                    <div className="mx-4 mt-6 p-1 bg-gray-50 rounded-2xl flex items-center gap-1 border border-gray-100">
+                        <button 
+                            onClick={() => {
+                                setCurrentRole('admin');
+                                localStorage.setItem('vaster_role', 'admin');
+                                window.location.href = '/';
+                            }}
+                            className={`flex-1 py-2 text-[9px] font-black uppercase tracking-tighter rounded-xl transition-all ${currentRole === 'admin' ? 'bg-white text-indigo-600 shadow-sm border border-indigo-100/50' : 'text-gray-400 hover:text-gray-600'}`}
+                        >
+                            Admin Main
+                        </button>
+                        <button 
+                            onClick={() => {
+                                setCurrentRole('workforce');
+                                localStorage.setItem('vaster_role', 'workforce');
+                                window.location.href = '/';
+                            }}
+                            className={`flex-1 py-2 text-[9px] font-black uppercase tracking-tighter rounded-xl transition-all ${currentRole === 'workforce' ? 'bg-white text-indigo-600 shadow-sm border border-indigo-100/50' : 'text-gray-400 hover:text-gray-600'}`}
+                        >
+                            Admin Agent
+                        </button>
+                    </div>
+                )}
+
+                {/* eBay Connection Card - Only for Admin */}
+                {isSidebarOpen && currentRole === 'admin' && (
                     <div className="mx-4 mt-6 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50 animate-in fade-in duration-500">
                         <div className="flex items-center gap-3 mb-3">
                             <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
@@ -199,13 +277,11 @@ const Layout = ({ children, onLogout, user }) => {
                             {ebayStatus.connected ? 'SYNC DATA NOW' : 'CONNECT EBAY'}
                         </button>
 
-
-
                     </div>
                 )}
 
-                {/* Navigation */}
-                <nav className="flex-1 px-3 space-y-6 mt-6 overflow-y-auto no-scrollbar">
+                {/* Navigation Groups */}
+                <div className="flex-1 overflow-y-auto py-6 px-4 space-y-8 custom-scrollbar">
                     {navGroups.map((group) => (
                         <div key={group.id} className="space-y-1">
                             {isSidebarOpen && (
@@ -234,7 +310,7 @@ const Layout = ({ children, onLogout, user }) => {
                             </div>
                         </div>
                     ))}
-                </nav>
+                </div>
 
                 {/* Profile Section & Logout */}
                 <div className="p-4 border-t border-gray-100 flex-shrink-0 space-y-3">
@@ -286,7 +362,7 @@ const Layout = ({ children, onLogout, user }) => {
                     <div className="flex items-center gap-2 lg:gap-5">
                         <div className="flex items-center gap-3 pl-1">
                             <div className="flex flex-col items-end hidden md:block">
-                                <p className="text-sm font-bold text-gray-900 leading-tight">Admin</p>
+                                <p className="text-sm font-bold text-gray-900 leading-tight">{currentRole === 'admin' ? 'Admin' : 'Agent Portal'}</p>
                                 <p className="text-[10px] text-indigo-500 font-bold tracking-tight">ONLINE</p>
                             </div>
                             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#4F46E5] to-[#818CF8] text-white flex items-center justify-center font-bold text-sm shadow-indigo-100 shadow-lg">

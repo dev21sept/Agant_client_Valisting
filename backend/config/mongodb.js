@@ -27,9 +27,24 @@ const connectMongoDB = async () => {
             serverSelectionTimeoutMS: 10000,
             socketTimeoutMS: 45000,
             maxPoolSize: 5 // Better for small serverless functions
-        }).then((mongooseInstance) => {
+        }).then(async (mongooseInstance) => {
             console.log('✅ MongoDB Connected (State: 1)');
             console.log(`📡 Active Database: ${mongooseInstance.connection.name}`);
+            
+            // Clean up problematic unique index on clients collection
+            try {
+                const db = mongooseInstance.connection.db;
+                const collections = await db.listCollections({ name: 'clients' }).toArray();
+                if (collections.length > 0) {
+                    await db.collection('clients').dropIndex('email_1').catch(e => {
+                        // Index might not exist or already dropped, ignore
+                    });
+                    console.log('🧹 Cleanup: email_1 index dropped from clients collection');
+                }
+            } catch (err) {
+                // Ignore index errors
+            }
+
             return mongooseInstance;
         }).catch(err => {
             console.error('❌ MongoDB Connection Error:', err.message);

@@ -353,9 +353,28 @@ const SearchableCategory = ({ value, onChange }) => {
     );
 };
 
-const ImportProductForm = ({ initialData, onSubmit, isFetching }) => {
+const ImportProductForm = ({ initialData, onSubmit, isFetching, user }) => {
     const { addToast } = useToast();
-    const [formData, setFormData] = useState({ title: '', description: '', category: '', categoryId: '', brand: '', condition_name: '', retail_price: '', selling_price: '', ebay_url: '', item_specifics: {}, officialAspects: [], images: [], variations: [] });
+    const [formData, setFormData] = useState({ 
+        title: '', 
+        description: '', 
+        category: '', 
+        categoryId: '', 
+        brand: '', 
+        condition_name: '', 
+        condition_notes: user?.defaultRules?.custom_condition_note || user?.defaultRules?.condition_note || '',
+        retail_price: '', 
+        selling_price: '', 
+        ebay_url: '', 
+        item_specifics: {}, 
+        officialAspects: [], 
+        images: [], 
+        variations: [],
+        fulfillment_policy: user?.defaultPolicies?.fulfillment || null,
+        payment_policy: user?.defaultPolicies?.payment || null,
+        return_policy: user?.defaultPolicies?.return || null,
+        inventory_location: user?.defaultPolicies?.location || null
+    });
     const [aspectsLoading, setAspectsLoading] = useState(false);
     const descriptionRef = useRef(null);
 
@@ -595,23 +614,32 @@ const ImportProductForm = ({ initialData, onSubmit, isFetching }) => {
                             <button type="submit" disabled={isFetching} className="py-5 bg-slate-900 text-white rounded-[20px] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-600 transition-all">
                                 {isFetching ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} Update
                             </button>
-                            <button type="button" disabled={isFetching} onClick={(e) => handlePreSubmit(e, true, true)} className="py-5 bg-amber-500 text-white rounded-[20px] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-amber-600 transition-all shadow-lg shadow-amber-100">
-                                <FileText className="w-4 h-4"/> Draft
-                            </button>
-                            <button type="button" disabled={isFetching} onClick={(e) => handlePreSubmit(e, true, false)} className="py-5 bg-indigo-600 text-white rounded-[20px] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
-                                <Plus className="w-4 h-4"/> List API
-                            </button>
-                            <button 
-                                type="button" 
-                                onClick={() => { 
-                                    console.log("%c [Frontend]  Pushing Data TO EXTENSION:", "color: #10B981; font-weight: bold;", formData);
-                                    window.postMessage({ type: "EbayAutoLister_SendData", payload: formData }, "*"); 
-                                    addToast("DATA SYNCED TO EXTENSION!", "success"); 
-                                }} 
-                                className="py-5 bg-blue-600 text-white rounded-[20px] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
-                            >
-                                <ExternalLink className="w-4 h-4" /> Push EXT
-                            </button>
+
+                            {(!user || user.role === 'admin' || user.allowApiListing) && (
+                                <button type="button" disabled={isFetching} onClick={(e) => handlePreSubmit(e, true, true)} className="py-5 bg-amber-500 text-white rounded-[20px] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-amber-600 transition-all shadow-lg shadow-amber-100">
+                                    <FileText className="w-4 h-4"/> Draft
+                                </button>
+                            )}
+
+                            {(!user || user.role === 'admin' || user.allowApiListing) && (
+                                <button type="button" disabled={isFetching} onClick={(e) => handlePreSubmit(e, true, false)} className="py-5 bg-indigo-600 text-white rounded-[20px] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
+                                    <Plus className="w-4 h-4"/> List API
+                                </button>
+                            )}
+
+                            {(!user || user.role === 'admin' || user.allowExtensionListing) && (
+                                <button 
+                                    type="button" 
+                                    onClick={() => { 
+                                        console.log("%c [Frontend]  Pushing Data TO EXTENSION:", "color: #10B981; font-weight: bold;", formData);
+                                        window.postMessage({ type: "EbayAutoLister_SendData", payload: formData }, "*"); 
+                                        addToast("DATA SYNCED TO EXTENSION!", "success"); 
+                                    }} 
+                                    className="py-5 bg-blue-600 text-white rounded-[20px] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                                >
+                                    <ExternalLink className="w-4 h-4" /> Push EXT
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

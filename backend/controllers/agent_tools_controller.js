@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
+const Client = require('../models/Client');
 const DeletedProduct = require('../models/DeletedProduct');
 const { normalizeProductImages } = require('../utils/imageProcessor');
 const ebayService = require('../services/ebayApiService');
@@ -339,5 +340,34 @@ exports.deleteProduct = async (req, res) => {
         res.json({ message: 'Product deleted successfully' });
     } catch (error) {
         res.status(500).json({ error: 'Failed to delete product', details: error.message });
+    }
+};
+
+exports.getAgentPerformance = async (req, res) => {
+    try {
+        const { agentId } = req.params;
+        const now = new Date();
+        const startOfDay = new Date(new Date(now).setHours(0,0,0,0));
+        const startOfWeek = new Date(new Date(now).setDate(now.getDate() - 7));
+        const startOfMonth = new Date(new Date(now).setMonth(now.getMonth() - 1));
+
+        const [today, week, month] = await Promise.all([
+            Product.countDocuments({ agentId, created_at: { $gte: startOfDay } }),
+            Product.countDocuments({ agentId, created_at: { $gte: startOfWeek } }),
+            Product.countDocuments({ agentId, created_at: { $gte: startOfMonth } })
+        ]);
+
+        res.json({ today, week, month });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.getClients = async (req, res) => {
+    try {
+        const clients = await Client.find({});
+        res.json(clients);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 };

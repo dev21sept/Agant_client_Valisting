@@ -45,6 +45,8 @@ const productSchema = new mongoose.Schema({
         enum: ['pending', 'draft', 'listed', 'extension'], 
         default: 'pending' 
     },
+    agentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agent' },
+    clientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Client' },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
 });
