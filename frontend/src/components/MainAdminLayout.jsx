@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     LayoutDashboard, 
     Package, 
@@ -11,14 +11,44 @@ import {
     ChevronRight,
     Bell,
     Search,
-    User
+    User,
+    Database
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { syncEbayData, getEbayConnectionStatus, getEbayAuthUrl, disconnectEbay } from '../services/api';
+import { useToast } from '../components/Toast';
 
 const MainAdminLayout = ({ children, onLogout, user }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
+    const [ebayStatus, setEbayStatus] = useState({ connected: false, sellerName: '' });
+    const { addToast, showConfirm } = useToast();
     const location = useLocation();
+
+    useEffect(() => {
+        const fetchStatus = async () => {
+            try {
+                const status = await getEbayConnectionStatus();
+                setEbayStatus(status);
+            } catch (err) {
+                console.error('Failed to fetch eBay status');
+            }
+        };
+        fetchStatus();
+    }, []);
+
+    const handleEbayDisconnect = async () => {
+        const ok = await showConfirm('Are you sure you want to disconnect this eBay account? You will need to login again to list products.');
+        if (!ok) return;
+        try {
+            await disconnectEbay();
+            setEbayStatus({ connected: false, sellerName: '', sellerEmail: '', environment: 'PRODUCTION' });
+            addToast('Disconnected successfully', 'success');
+        } catch (err) {
+            console.error('Failed to disconnect eBay:', err);
+            addToast('Disconnect failed', 'error');
+        }
+    };
 
     const navGroups = [
         {
@@ -85,6 +115,73 @@ const MainAdminLayout = ({ children, onLogout, user }) => {
                             className="flex-1 py-2 text-[9px] font-black uppercase tracking-tighter rounded-xl text-gray-400 hover:text-gray-600"
                         >
                             Admin Agent
+                        </button>
+                    </div>
+                )}
+
+                {/* eBay Connection Card */}
+                {isSidebarOpen && (
+                    <div className="mx-4 mt-6 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50 animate-in fade-in duration-500">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                                <Database className="w-4 h-4 text-[#4F46E5]" />
+                            </div>
+                            <div className="overflow-hidden">
+                                <div className="flex flex-col mb-1">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Active Account</p>
+                                    <div className="flex flex-col">
+                                        <p className="text-xs font-black text-gray-900 leading-tight truncate">
+                                            {ebayStatus.sellerName || 'Not Connected'}
+                                        </p>
+                                        {ebayStatus.connected && ebayStatus.sellerEmail && (
+                                            <p className="text-[9px] text-gray-400 font-bold truncate mt-0.5">
+                                                {ebayStatus.sellerEmail}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                                <p className={`text-[9px] flex items-center gap-1 font-black uppercase tracking-tight ${ebayStatus.connected ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${ebayStatus.connected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>
+                                    {ebayStatus.connected ? 'Connectivity Active' : 'Login Required'}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        {ebayStatus.connected && (
+                            <button 
+                                onClick={handleEbayDisconnect}
+                                className="w-full mt-3 py-1.5 border border-rose-100 bg-rose-50/30 text-rose-500 text-[9px] font-black rounded-lg uppercase tracking-widest hover:bg-rose-50 transition-colors"
+                            >
+                                Force Logout eBay
+                            </button>
+                        )}
+                        <button 
+                            onClick={async () => {
+                                if (ebayStatus.connected) {
+                                    try {
+                                        addToast('Sync started in background...', 'info');
+                                        await syncEbayData();
+                                        window.location.reload();
+                                    } catch (err) {
+                                        addToast('Sync failed. Please check connection.', 'error');
+                                    }
+                                } else {
+                                    try {
+                                        addToast('Connecting to eBay...', 'info');
+                                        const { url } = await getEbayAuthUrl('dashboard');
+                                        if (url) window.location.href = url;
+                                    } catch (err) {
+                                        addToast('Failed to connect. Check backend.', 'error');
+                                    }
+                                }
+                            }}
+                            className={`w-full py-1.5 text-[10px] font-bold rounded-lg border transition-all shadow-sm ${
+                                ebayStatus.connected 
+                                ? 'bg-white text-[#4F46E5] border-indigo-100 hover:bg-[#4F46E5] hover:text-white' 
+                                : 'bg-[#4F46E5] text-white border-transparent hover:bg-[#4338CA]'
+                            }`}
+                        >
+                            {ebayStatus.connected ? 'SYNC DATA NOW' : 'CONNECT EBAY'}
                         </button>
                     </div>
                 )}
