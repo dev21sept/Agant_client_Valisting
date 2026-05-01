@@ -7,7 +7,7 @@ import { getProductById, updateProduct, listProduct } from '../services/api';
 import { useToast } from '../components/Toast';
 import { ChevronLeft, ExternalLink, Sparkles, Globe } from 'lucide-react';
 
-const EditProduct = () => {
+const EditProduct = ({ user }) => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [product, setProduct] = useState(null);
@@ -122,16 +122,19 @@ const EditProduct = () => {
                     onSubmit={handleUpdate}
                     onReset={() => navigate('/products')}
                     onUpdate={(liveData) => setProduct(prev => ({ ...prev, ...liveData }))}
+                    user={user}
                 />
             ) : product?.source === 'scraped' || product?.source === 'ebay' ? (
                 <ImportProductForm
                     initialData={product}
                     onSubmit={handleUpdate}
+                    user={user}
                 />
             ) : (
                 <ProductForm
                     initialData={product}
                     onSubmit={handleUpdate}
+                    user={user}
                 />
             )}
         </div>

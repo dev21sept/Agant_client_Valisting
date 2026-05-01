@@ -372,7 +372,7 @@ const ImportProductForm = ({ initialData, onSubmit, isFetching, user }) => {
         variations: [],
         fulfillment_policy: user?.defaultPolicies?.fulfillment || null,
         payment_policy: user?.defaultPolicies?.payment || null,
-        return_policy: user?.defaultPolicies?.return || null,
+        return_policy: user?.defaultPolicies?.returns || null,
         inventory_location: user?.defaultPolicies?.location || null
     });
     const [aspectsLoading, setAspectsLoading] = useState(false);

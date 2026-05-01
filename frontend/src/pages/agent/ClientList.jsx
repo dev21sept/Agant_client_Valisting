@@ -177,6 +177,7 @@ const ClientList = ({ user }) => {
                 condition_note: '',
                 custom_condition_note: '',
                 price_markup: 0,
+                custom_title_fields: [],
                 ...(client.defaultRules || {})
             },
             defaultPolicies: client.defaultPolicies || {},
@@ -269,6 +270,38 @@ const ClientList = ({ user }) => {
             defaultRules: {
                 ...editingClient.defaultRules,
                 title_sequence: editingClient.defaultRules.title_sequence.filter(f => f !== field)
+            }
+        });
+    };
+
+    const addCustomTitleFieldRow = () => {
+        setEditingClient({
+            ...editingClient,
+            defaultRules: {
+                ...editingClient.defaultRules,
+                custom_title_fields: [...(editingClient.defaultRules.custom_title_fields || []), '']
+            }
+        });
+    };
+
+    const updateCustomTitleField = (index, value) => {
+        const newFields = [...(editingClient.defaultRules.custom_title_fields || [])];
+        newFields[index] = value;
+        setEditingClient({
+            ...editingClient,
+            defaultRules: {
+                ...editingClient.defaultRules,
+                custom_title_fields: newFields
+            }
+        });
+    };
+
+    const removeCustomTitleField = (index) => {
+        setEditingClient({
+            ...editingClient,
+            defaultRules: {
+                ...editingClient.defaultRules,
+                custom_title_fields: (editingClient.defaultRules.custom_title_fields || []).filter((_, i) => i !== index)
             }
         });
     };
@@ -565,7 +598,41 @@ const ClientList = ({ user }) => {
                                             {BASE_TITLE_FIELDS.map(f => (
                                                 <button key={f} onClick={() => addFieldToSequence(f)} className="px-3 py-1.5 bg-white border border-gray-100 rounded-xl text-[10px] font-black text-gray-600 hover:border-indigo-600 hover:text-indigo-600 transition-all">+ {f}</button>
                                             ))}
+                                            <button 
+                                                onClick={addCustomTitleFieldRow} 
+                                                className="px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-xl text-[10px] font-black text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all"
+                                            >
+                                                + Custom Field
+                                            </button>
                                         </div>
+
+                                        {editingClient.defaultRules.custom_title_fields?.length > 0 && (
+                                            <div className="space-y-2 bg-gray-50 border border-gray-100 rounded-[2rem] p-4">
+                                                <h5 className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-2 mb-2">Define Custom Strings</h5>
+                                                {editingClient.defaultRules.custom_title_fields.map((field, idx) => (
+                                                    <div key={`custom-${idx}`} className="flex items-center gap-2 animate-in slide-in-from-left-2">
+                                                        <input
+                                                            value={field}
+                                                            onChange={(e) => updateCustomTitleField(idx, e.target.value)}
+                                                            className="flex-1 h-9 px-4 rounded-xl border border-gray-200 text-xs font-bold outline-none focus:border-emerald-500 shadow-sm"
+                                                            placeholder={`Custom string ${idx + 1}...`}
+                                                        />
+                                                        <button
+                                                            onClick={() => addFieldToSequence(field)}
+                                                            className="h-9 px-3 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-100"
+                                                        >
+                                                            Use
+                                                        </button>
+                                                        <button
+                                                            onClick={() => removeCustomTitleField(idx)}
+                                                            className="p-2 rounded-xl text-rose-600 hover:bg-rose-50"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
 
                                         <Reorder.Group
                                             axis="x"

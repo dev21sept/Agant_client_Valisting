@@ -361,7 +361,7 @@ const AiProductForm = ({ initialData, onSubmit, isFetching, onReset, onUpdate, u
         officialAspects: [],
         fulfillment_policy: user?.defaultPolicies?.fulfillment || null,
         payment_policy: user?.defaultPolicies?.payment || null,
-        return_policy: user?.defaultPolicies?.return || null,
+        return_policy: user?.defaultPolicies?.returns || null,
         inventory_location: user?.defaultPolicies?.location || null,
         source: 'ai',
         title_parts: {},

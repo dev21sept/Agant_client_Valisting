@@ -22,7 +22,8 @@ const clientSchema = new mongoose.Schema({
         price_markup: Number,
         title_template: String,
         title_sequence: [String],
-        description_prompt: String
+        description_prompt: String,
+        custom_title_fields: [String]
     },
     
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
