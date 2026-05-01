@@ -55,17 +55,6 @@ const Dashboard = () => {
     }, [location]);
 
 
-    const handleEbayConnect = async () => {
-        try {
-            addToast("Connecting to eBay...", 'info');
-            const { url } = await getEbayAuthUrl();
-            if (url) window.location.href = url;
-        } catch (error) {
-            console.error('Error getting eBay auth URL:', error);
-            addToast('Failed to get eBay connection link. Check backend status.', 'error');
-        }
-    };
-
     const statCards = [
         { name: 'Total Products', value: stats.totalProducts, icon: Package, color: 'text-blue-600', bg: 'bg-blue-50', trend: 'Total Inventory' },
         { name: 'Active Orders', value: stats.totalOrders, icon: ShoppingBag, color: 'text-emerald-600', bg: 'bg-emerald-50', trend: 'Sales from eBay' },
@@ -83,23 +72,6 @@ const Dashboard = () => {
                         Welcome Back, Admin <span className="text-xl md:text-2xl animate-bounce">👋</span>
                     </h1>
                     <p className="text-gray-500 mt-1 font-medium italic text-sm">Real-time inventory & sales insights.</p>
-
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                    <button 
-                        onClick={handleEbayConnect}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white text-[#0053a0] border border-[#0053a0]/20 px-4 md:px-6 py-2.5 rounded-2xl font-bold text-sm hover:bg-[#0053a0]/5 transition-all active:scale-95 shadow-sm"
-                    >
-                        <Link2 className="w-4 h-4" />
-                        Sync eBay
-                    </button>
-                    <Link 
-                        to="/products/add" 
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] text-white px-4 md:px-6 py-2.5 rounded-2xl font-bold text-sm hover:translate-y-[-2px] transition-all shadow-lg active:scale-95"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Create Listing
-                    </Link>
                 </div>
             </div>
 
