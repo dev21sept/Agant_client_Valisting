@@ -3,9 +3,7 @@ import axios from 'axios';
 const isProduction = import.meta.env.MODE === 'production' || window.location.hostname.includes('ajxlubricant.co.in');
 
 const api = axios.create({
-    baseURL: isProduction
-        ? 'https://apivalisting.ajxlubricant.co.in/api'
-        : 'http://localhost:5000/api',
+    baseURL: 'https://agant-client-valisting-m52l.vercel.app/api',
     timeout: 120000
 });
 

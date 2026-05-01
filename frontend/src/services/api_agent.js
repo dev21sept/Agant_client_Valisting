@@ -1,13 +1,13 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api/agent-tools',
+    baseURL: 'https://agant-client-valisting-m52l.vercel.app/api/agent-tools',
     timeout: 120000,
 });
 
 // Helper for other modules (AI, Scraper) that might not be under /agent-tools yet
 const mainApi = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: 'https://agant-client-valisting-m52l.vercel.app/api',
     timeout: 120000,
 });
 
