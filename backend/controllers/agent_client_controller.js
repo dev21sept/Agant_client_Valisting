@@ -13,7 +13,7 @@ exports.agentLogin = async (req, res) => {
         }
         
         // Find assigned client
-        const client = await Client.findOne({ assignedAgentId: agent._id });
+        const client = await Client.findOne({ assignedAgents: { $in: [agent._id] } });
         
         res.json({ 
             success: true, 
@@ -60,17 +60,17 @@ exports.getAgents = async (req, res) => {
 
 exports.createClient = async (req, res) => {
     try {
-        const { name, assignedAgentId, defaultPolicies, defaultRules, ebayAccountName, allowApiListing, allowExtensionListing, allowAiFetching, allowEbayImport } = req.body;
+        const { name, email, mobileNumber, ebayAccountName, ebayPassword, assignedAgents, defaultPolicies, defaultRules, allowApiListing, allowExtensionListing, allowAiFetching, allowEbayImport } = req.body;
         
-        // Handle empty strings for ObjectId fields
-        const agentId = assignedAgentId === "" ? null : assignedAgentId;
-
         const newClient = new Client({ 
             name, 
-            assignedAgentId: agentId, 
+            email,
+            mobileNumber,
+            ebayAccountName,
+            ebayPassword,
+            assignedAgents: assignedAgents || [],
             defaultPolicies, 
             defaultRules,
-            ebayAccountName,
             allowApiListing: allowApiListing ?? false,
             allowExtensionListing: allowExtensionListing ?? true,
             allowAiFetching: allowAiFetching ?? true,
@@ -87,7 +87,7 @@ exports.createClient = async (req, res) => {
 
 exports.getClients = async (req, res) => {
     try {
-        const clients = await Client.find().populate('assignedAgentId').sort({ created_at: -1 });
+        const clients = await Client.find().populate('assignedAgents').sort({ created_at: -1 });
         res.json(clients);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -235,7 +235,7 @@ exports.deleteAgent = async (req, res) => {
         const Client = require('../models/Client');
         await Agent.findByIdAndDelete(id);
         // Also unassign from clients
-        await Client.updateMany({ assignedAgentId: id }, { assignedAgentId: null });
+        await Client.updateMany({ assignedAgents: id }, { $pull: { assignedAgents: id } });
         res.json({ success: true, message: 'Agent deleted' });
     } catch (error) {
         res.status(500).json({ error: error.message });

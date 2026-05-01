@@ -2,12 +2,14 @@ const mongoose = require('mongoose');
 
 const clientSchema = new mongoose.Schema({
     name: { type: String, required: true },
-    email: { type: String, unique: false, sparse: true }, // Sparse allows multiple nulls if an index exists
+    email: { type: String, unique: false, sparse: true },
+    mobileNumber: String,
     ebayAccountName: String,
+    ebayPassword: String,
     ebayToken: String, // User token for this specific client
     ebayRefreshToken: String,
     ebayTokenExpiry: Date,
-    assignedAgentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agent' },
+    assignedAgents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Agent' }],
     
     // Fixed rules/policies for this client
     defaultPolicies: {

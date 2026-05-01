@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Globe, Plus, Search, User, Link2, Settings2, Trash2, Edit2, ShieldAlert, ShieldCheck, X, Zap, Database, ExternalLink, Unlink, RefreshCw, Save, CheckCircle2, ChevronDown, Check, Sparkles, Link as LinkIcon } from 'lucide-react';
+import { Globe, Plus, Search, User, Link2, Settings2, Trash2, Edit2, ShieldAlert, ShieldCheck, X, Zap, Database, ExternalLink, Unlink, RefreshCw, Save, CheckCircle2, ChevronDown, Check, Sparkles, Link as LinkIcon, Mail, Phone, Key, AtSign, Eye, EyeOff } from 'lucide-react';
 import { Reorder, motion, AnimatePresence } from 'framer-motion';
 import { getClients, createClient, getAgents, updateClient, deleteClient, disconnectClientEbay, getClientPolicies, getEbayAuthUrl, getSavedConditionNotes } from '../../services/api';
 import { useToast } from '../../components/Toast';
@@ -89,6 +89,69 @@ const CustomSelect = ({ options = [], value, onSelect, placeholder = 'Select...'
     );
 };
 
+const MultiAgentSelect = ({ agents = [], selectedIds = [], onToggle }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const wrapperRef = React.useRef(null);
+
+    React.useEffect(() => {
+        const handleClickOutside = (e) => { if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setIsOpen(false); };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const filteredAgents = agents.filter(a => a.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    return (
+        <div className="relative w-full" ref={wrapperRef}>
+            <div
+                onClick={() => setIsOpen(!isOpen)}
+                className={`w-full h-12 px-4 bg-gray-50 border-2 rounded-xl flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-indigo-600 bg-white ring-4 ring-indigo-50' : 'border-transparent hover:border-indigo-100 hover:bg-white'}`}
+            >
+                <div className="flex items-center gap-3">
+                    <User className={`w-4 h-4 ${isOpen ? 'text-indigo-600' : 'text-gray-400'}`} />
+                    <span className="text-xs font-bold text-gray-400">Add Agents to Workforce...</span>
+                </div>
+                <Plus className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-45 text-indigo-600' : ''}`} />
+            </div>
+
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                        className="absolute bottom-full left-0 right-0 mb-2 bg-white border border-gray-200 rounded-2xl shadow-2xl z-[1000] overflow-hidden flex flex-col"
+                    >
+                        <div className="p-3 bg-gray-50 border-b border-gray-100">
+                            <input
+                                autoFocus type="text" placeholder="Search agents..." value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold outline-none focus:border-indigo-600"
+                            />
+                        </div>
+                        <div className="max-h-48 overflow-y-auto py-1">
+                            {filteredAgents.map(agent => {
+                                const isSelected = selectedIds.includes(agent._id);
+                                return (
+                                    <div
+                                        key={agent._id}
+                                        onClick={() => onToggle(agent._id)}
+                                        className="px-4 py-2.5 text-xs font-bold flex items-center gap-3 cursor-pointer hover:bg-indigo-50 group"
+                                    >
+                                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-gray-200 group-hover:border-indigo-400'}`}>
+                                            {isSelected && <Check className="w-3 h-3 text-white" />}
+                                        </div>
+                                        <span className={isSelected ? 'text-indigo-600' : 'text-gray-600'}>{agent.name}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
 const BASE_TITLE_FIELDS = [
     'Brand', 'Product Type', 'Model / Series', 'Size', 'Color', 'Material', 'Style / Use Case', 'Gender / Department'
 ];
@@ -107,7 +170,9 @@ const ClientList = ({ user }) => {
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showViewModal, setShowViewModal] = useState(false);
     const [editingClient, setEditingClient] = useState(null);
+    const [viewingClient, setViewingClient] = useState(null);
     const [policies, setPolicies] = useState({ fulfillment: [], payment: [], returns: [], locations: [] });
     const [isFetchingPolicies, setIsFetchingPolicies] = useState(false);
     const [savedNotes, setSavedNotes] = useState(DEFAULT_CONDITION_NOTES);
@@ -117,12 +182,10 @@ const ClientList = ({ user }) => {
 
     const [newClient, setNewClient] = useState({
         name: '',
-        assignedAgentId: '',
+        email: '',
+        mobileNumber: '',
         ebayAccountName: '',
-        allowApiListing: false,
-        allowExtensionListing: true,
-        allowAiFetching: true,
-        allowEbayImport: true
+        ebayPassword: ''
     });
 
     useEffect(() => {
@@ -159,7 +222,7 @@ const ClientList = ({ user }) => {
             await createClient(newClient);
             addToast('Client created successfully', 'success');
             setShowAddModal(false);
-            setNewClient({ name: '', assignedAgentId: '', ebayAccountName: '', allowApiListing: false, allowExtensionListing: true, allowAiFetching: true, allowEbayImport: true });
+            setNewClient({ name: '', email: '', mobileNumber: '', ebayAccountName: '', ebayPassword: '' });
             fetchData();
         } catch (error) {
             const msg = error.response?.data?.error || error.message;
@@ -181,6 +244,7 @@ const ClientList = ({ user }) => {
                 ...(client.defaultRules || {})
             },
             defaultPolicies: client.defaultPolicies || {},
+            assignedAgents: Array.isArray(client.assignedAgents) ? client.assignedAgents.map(a => typeof a === 'object' ? a._id : a) : [],
             allowApiListing: client.allowApiListing ?? false,
             allowExtensionListing: client.allowExtensionListing ?? true,
             allowAiFetching: client.allowAiFetching ?? true,
@@ -313,7 +377,8 @@ const ClientList = ({ user }) => {
         }
         return list.filter(c => 
             c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            c.ebayAccountName?.toLowerCase().includes(searchTerm.toLowerCase())
+            c.ebayAccountName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            c.assignedAgents?.some(a => a.name?.toLowerCase().includes(searchTerm.toLowerCase()))
         );
     }, [clients, searchTerm, user]);
 
@@ -369,13 +434,27 @@ const ClientList = ({ user }) => {
                                             <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
                                                 <Globe className="w-5 h-5" />
                                             </div>
-                                            <p className="text-sm font-bold text-gray-900">{client.name}</p>
+                                            <div 
+                                                onClick={() => { setViewingClient(client); setShowViewModal(true); }}
+                                                className="cursor-pointer group/name"
+                                            >
+                                                <p className="text-sm font-bold text-gray-900 group-hover/name:text-indigo-600 transition-colors">{client.name}</p>
+                                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest opacity-0 group-hover/name:opacity-100 transition-all">Click to view details</p>
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className="text-xs font-bold text-gray-600 bg-indigo-50 px-3 py-1 rounded-lg">
-                                            {client.assignedAgentId?.name || 'Unassigned'}
-                                        </span>
+                                        <div className="flex flex-wrap gap-1">
+                                            {client.assignedAgents && client.assignedAgents.length > 0 ? (
+                                                client.assignedAgents.map(agent => (
+                                                    <span key={agent._id} className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md uppercase">
+                                                        {agent.name}
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className="text-[10px] font-bold text-gray-300 italic">Unassigned</span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         {client.ebayToken ? (
@@ -413,8 +492,14 @@ const ClientList = ({ user }) => {
 
             {/* Edit Modal (FULL SYSTEM) */}
             {showEditModal && editingClient && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl flex flex-col scale-in-center animate-in zoom-in-95 duration-500">
+                <div 
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-300"
+                    onClick={() => setShowEditModal(false)}
+                >
+                    <div 
+                        className="bg-white rounded-[2.5rem] w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl flex flex-col scale-in-center animate-in zoom-in-95 duration-500"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         {/* Header */}
                         <div className="p-8 border-b border-gray-100 flex items-center justify-between bg-white">
                             <div className="flex items-center gap-4">
@@ -461,120 +546,179 @@ const ClientList = ({ user }) => {
                                         )}
                                     </div>
 
-                                    {/* Listing Channel Controls */}
-                                    <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1 mt-6">Listing Permissions</h4>
-                                    <div className="bg-gray-50/50 p-5 rounded-[2rem] border border-gray-100 space-y-4">
-                                        <label className="flex items-center gap-4 cursor-pointer group">
-                                            <div className="relative">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={editingClient.allowApiListing}
-                                                    onChange={(e) => setEditingClient({...editingClient, allowApiListing: e.target.checked})}
-                                                    className="peer sr-only"
-                                                />
-                                                <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-indigo-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-xs font-black text-gray-900 flex items-center gap-2">
-                                                    <Zap className={`w-3.5 h-3.5 ${editingClient.allowApiListing ? 'text-indigo-600' : 'text-gray-400'}`} />
-                                                    API LISTING
-                                                </span>
-                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable High-Speed Direct API Publishing</span>
-                                            </div>
-                                        </label>
+                                    {/* Multi-Agent Assignment Section */}
+                                    <div className="pt-6 border-t border-gray-100 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Assign Agent to Client</h4>
+                                            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{editingClient.assignedAgents?.length || 0} Agents Assigned</span>
+                                        </div>
 
-                                        <label className="flex items-center gap-4 cursor-pointer group">
-                                            <div className="relative">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={editingClient.allowExtensionListing}
-                                                    onChange={(e) => setEditingClient({...editingClient, allowExtensionListing: e.target.checked})}
-                                                    className="peer sr-only"
-                                                />
-                                                <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-emerald-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-xs font-black text-gray-900 flex items-center gap-2">
-                                                    <ExternalLink className={`w-3.5 h-3.5 ${editingClient.allowExtensionListing ? 'text-emerald-600' : 'text-gray-400'}`} />
-                                                    EXTENSION LISTING
-                                                </span>
-                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable Manual Chrome Extension Integration</span>
-                                            </div>
-                                        </label>
-
-                                        <label className="flex items-center gap-4 cursor-pointer group">
-                                            <div className="relative">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={editingClient.allowAiFetching}
-                                                    onChange={(e) => setEditingClient({...editingClient, allowAiFetching: e.target.checked})}
-                                                    className="peer sr-only"
-                                                />
-                                                <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-fuchsia-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-xs font-black text-gray-900 flex items-center gap-2">
-                                                    <Sparkles className={`w-3.5 h-3.5 ${editingClient.allowAiFetching ? 'text-fuchsia-600' : 'text-gray-400'}`} />
-                                                    AI FETCHING
-                                                </span>
-                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable Computer Vision & AI Product Detection</span>
-                                            </div>
-                                        </label>
-
-                                        <label className="flex items-center gap-4 cursor-pointer group">
-                                            <div className="relative">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked={editingClient.allowEbayImport}
-                                                    onChange={(e) => setEditingClient({...editingClient, allowEbayImport: e.target.checked})}
-                                                    className="peer sr-only"
-                                                />
-                                                <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-xs font-black text-gray-900 flex items-center gap-2">
-                                                    <LinkIcon className={`w-3.5 h-3.5 ${editingClient.allowEbayImport ? 'text-blue-600' : 'text-gray-400'}`} />
-                                                    EBAY LINK IMPORT
-                                                </span>
-                                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable Direct URL Marketplace Scraper</span>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div className="lg:col-span-2 space-y-6">
-                                    <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Business Policies (Auto-Apply)</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {[
-                                            { label: 'Fulfillment', key: 'fulfillment', icon: Zap, options: policies.fulfillment, idField: 'fulfillmentPolicyId' },
-                                            { label: 'Payment', key: 'payment', icon: Database, options: policies.payment, idField: 'paymentPolicyId' },
-                                            { label: 'Returns', key: 'returns', icon: RefreshCw, options: policies.returns, idField: 'returnPolicyId' },
-                                            { label: 'Location', key: 'location', icon: Globe, options: policies.locations, idField: 'merchantLocationKey' }
-                                        ].map((pol) => (
-                                            <div key={pol.label} className="space-y-2">
-                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">{pol.label} Policy</label>
-                                                <CustomSelect
-                                                    icon={pol.icon}
-                                                    placeholder={isFetchingPolicies ? 'Fetching...' : `Select ${pol.label}...`}
-                                                    options={pol.options.map(o => ({
-                                                        label: o.name || o.merchantLocationKey,
-                                                        value: o[pol.idField],
-                                                        description: o.description || (o.address ? `${o.address.city}, ${o.address.stateOrProvince}` : '')
-                                                    }))}
-                                                    value={editingClient.defaultPolicies?.[pol.key] ? {
-                                                        label: editingClient.defaultPolicies[pol.key].name || editingClient.defaultPolicies[pol.key].merchantLocationKey,
-                                                        value: editingClient.defaultPolicies[pol.key][pol.idField]
-                                                    } : null}
-                                                    onSelect={(val) => {
-                                                        const selected = pol.options.find(o => o[pol.idField] === val);
-                                                        setEditingClient({
-                                                            ...editingClient,
-                                                            defaultPolicies: { ...editingClient.defaultPolicies, [pol.key]: selected }
-                                                        });
+                                        <div className="grid grid-cols-1 gap-4">
+                                            {/* Left: Dropdown */}
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Find & Add Agents</label>
+                                                <MultiAgentSelect 
+                                                    agents={agents}
+                                                    selectedIds={editingClient.assignedAgents || []}
+                                                    onToggle={(id) => {
+                                                        const current = editingClient.assignedAgents || [];
+                                                        const next = current.includes(id) ? current.filter(cid => cid !== id) : [...current, id];
+                                                        setEditingClient({ ...editingClient, assignedAgents: next });
                                                     }}
                                                 />
                                             </div>
-                                        ))}
+
+                                            {/* Right: Selected Tags Box */}
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Active Workforce</label>
+                                                <div className="min-h-[48px] p-2 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex flex-wrap gap-2 items-start">
+                                                    {editingClient.assignedAgents?.length > 0 ? (
+                                                        editingClient.assignedAgents.map(id => {
+                                                            const agent = agents.find(a => a._id === id);
+                                                            if (!agent) return null;
+                                                            return (
+                                                                <div key={id} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-indigo-100 rounded-lg shadow-sm animate-in zoom-in-95 duration-200">
+                                                                    <span className="text-[11px] font-bold text-gray-700">{agent.name}</span>
+                                                                    <button 
+                                                                        onClick={() => setEditingClient({ ...editingClient, assignedAgents: editingClient.assignedAgents.filter(cid => cid !== id) })}
+                                                                        className="p-0.5 hover:bg-rose-50 hover:text-rose-600 rounded transition-colors"
+                                                                    >
+                                                                        <X className="w-3 h-3" />
+                                                                    </button>
+                                                                </div>
+                                                            );
+                                                        })
+                                                    ) : (
+                                                        <div className="w-full py-2 text-center text-[10px] font-bold text-gray-400 italic">No agents assigned yet</div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                </div>
+
+                                <div className="lg:col-span-2 space-y-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        {/* Listing Channel Controls */}
+                                        <div className="space-y-4">
+                                            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Listing Permissions</h4>
+                                            <div className="bg-gray-50/50 p-5 rounded-[2rem] border border-gray-100 space-y-4">
+                                                <label className="flex items-center gap-4 cursor-pointer group">
+                                                    <div className="relative">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={editingClient.allowApiListing}
+                                                            onChange={(e) => setEditingClient({...editingClient, allowApiListing: e.target.checked})}
+                                                            className="peer sr-only"
+                                                        />
+                                                        <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-indigo-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-black text-gray-900 flex items-center gap-2">
+                                                            <Zap className={`w-3.5 h-3.5 ${editingClient.allowApiListing ? 'text-indigo-600' : 'text-gray-400'}`} />
+                                                            API LISTING
+                                                        </span>
+                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable High-Speed Direct API Publishing</span>
+                                                    </div>
+                                                </label>
+
+                                                <label className="flex items-center gap-4 cursor-pointer group">
+                                                    <div className="relative">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={editingClient.allowExtensionListing}
+                                                            onChange={(e) => setEditingClient({...editingClient, allowExtensionListing: e.target.checked})}
+                                                            className="peer sr-only"
+                                                        />
+                                                        <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-emerald-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-black text-gray-900 flex items-center gap-2">
+                                                            <ExternalLink className={`w-3.5 h-3.5 ${editingClient.allowExtensionListing ? 'text-emerald-600' : 'text-gray-400'}`} />
+                                                            EXTENSION LISTING
+                                                        </span>
+                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable Manual Chrome Extension Integration</span>
+                                                    </div>
+                                                </label>
+
+                                                <label className="flex items-center gap-4 cursor-pointer group">
+                                                    <div className="relative">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={editingClient.allowAiFetching}
+                                                            onChange={(e) => setEditingClient({...editingClient, allowAiFetching: e.target.checked})}
+                                                            className="peer sr-only"
+                                                        />
+                                                        <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-fuchsia-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-black text-gray-900 flex items-center gap-2">
+                                                            <Sparkles className={`w-3.5 h-3.5 ${editingClient.allowAiFetching ? 'text-fuchsia-600' : 'text-gray-400'}`} />
+                                                            AI FETCHING
+                                                        </span>
+                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable Computer Vision & AI Product Detection</span>
+                                                    </div>
+                                                </label>
+
+                                                <label className="flex items-center gap-4 cursor-pointer group">
+                                                    <div className="relative">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={editingClient.allowEbayImport}
+                                                            onChange={(e) => setEditingClient({...editingClient, allowEbayImport: e.target.checked})}
+                                                            className="peer sr-only"
+                                                        />
+                                                        <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner"></div>
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-black text-gray-900 flex items-center gap-2">
+                                                            <LinkIcon className={`w-3.5 h-3.5 ${editingClient.allowEbayImport ? 'text-blue-600' : 'text-gray-400'}`} />
+                                                            EBAY LINK IMPORT
+                                                        </span>
+                                                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Enable Direct URL Marketplace Scraper</span>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        {/* Business Policies (Auto-Apply) */}
+                                        <div className="space-y-4">
+                                            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Business Policies</h4>
+                                            <div className="grid grid-cols-1 gap-4">
+                                                {[
+                                                    { label: 'Fulfillment', key: 'fulfillment', icon: Zap, options: policies.fulfillment, idField: 'fulfillmentPolicyId' },
+                                                    { label: 'Payment', key: 'payment', icon: Database, options: policies.payment, idField: 'paymentPolicyId' },
+                                                    { label: 'Returns', key: 'returns', icon: RefreshCw, options: policies.returns, idField: 'returnPolicyId' },
+                                                    { label: 'Location', key: 'location', icon: Globe, options: policies.locations, idField: 'merchantLocationKey' }
+                                                ].map((pol) => (
+                                                    <div key={pol.label} className="space-y-1.5">
+                                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">{pol.label} Policy</label>
+                                                        <CustomSelect
+                                                            icon={pol.icon}
+                                                            placeholder={isFetchingPolicies ? 'Fetching...' : `Select...`}
+                                                            options={pol.options.map(o => ({
+                                                                label: o.name || o.merchantLocationKey,
+                                                                value: o[pol.idField],
+                                                                description: o.description || (o.address ? `${o.address.city}, ${o.address.stateOrProvince}` : '')
+                                                            }))}
+                                                            value={editingClient.defaultPolicies?.[pol.key] ? {
+                                                                label: editingClient.defaultPolicies[pol.key].name || editingClient.defaultPolicies[pol.key].merchantLocationKey,
+                                                                value: editingClient.defaultPolicies[pol.key][pol.idField]
+                                                            } : null}
+                                                            onSelect={(val) => {
+                                                                const selected = pol.options.find(o => o[pol.idField] === val);
+                                                                setEditingClient({
+                                                                    ...editingClient,
+                                                                    defaultPolicies: { ...editingClient.defaultPolicies, [pol.key]: selected }
+                                                                });
+                                                            }}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -715,49 +859,151 @@ const ClientList = ({ user }) => {
 
             {/* Add Modal (Simple) */}
             {showAddModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl">
+                <div 
+                    className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                    onClick={() => setShowAddModal(false)}
+                >
+                    <div 
+                        className="bg-white rounded-[2.5rem] w-full max-w-md p-8 shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="flex items-center justify-between mb-8">
                             <h3 className="text-xl font-black text-gray-900">New Client Profile</h3>
                             <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="w-5 h-5 text-gray-400" /></button>
                         </div>
                         <form onSubmit={handleAddClient} className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Client / Business Name</label>
-                                <input required type="text" value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} className="w-full px-5 py-3 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all" />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Assigned Workforce Agent</label>
-                                <select required value={newClient.assignedAgentId} onChange={(e) => setNewClient({ ...newClient, assignedAgentId: e.target.value })} className="w-full px-5 py-3 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all">
-                                    <option value="">Select agent...</option>
-                                    {agents.map(a => <option key={a._id} value={a._id}>{a.name}</option>)}
-                                </select>
-                            </div>
+                            <div className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Client / Business Name</label>
+                                    <input required type="text" value={newClient.name} onChange={(e) => setNewClient({ ...newClient, name: e.target.value })} className="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all" placeholder="Enter business name" />
+                                </div>
 
-                            <div className="bg-gray-50/50 p-4 rounded-2xl border border-gray-100 space-y-4 mt-2">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Initial Listing Permissions</p>
-                                <div className="space-y-3">
-                                    <label className="flex items-center gap-3 cursor-pointer">
-                                        <input type="checkbox" checked={newClient.allowApiListing} onChange={(e) => setNewClient({...newClient, allowApiListing: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-                                        <span className="text-[11px] font-bold text-gray-700 uppercase tracking-tighter">Enable API Listing</span>
-                                    </label>
-                                    <label className="flex items-center gap-3 cursor-pointer">
-                                        <input type="checkbox" checked={newClient.allowExtensionListing} onChange={(e) => setNewClient({...newClient, allowExtensionListing: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-600" />
-                                        <span className="text-[11px] font-bold text-gray-700 uppercase tracking-tighter">Enable Extension Listing</span>
-                                    </label>
-                                    <label className="flex items-center gap-3 cursor-pointer">
-                                        <input type="checkbox" checked={newClient.allowAiFetching} onChange={(e) => setNewClient({...newClient, allowAiFetching: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-fuchsia-600 focus:ring-fuchsia-600" />
-                                        <span className="text-[11px] font-bold text-gray-700 uppercase tracking-tighter">Enable AI Fetching</span>
-                                    </label>
-                                    <label className="flex items-center gap-3 cursor-pointer">
-                                        <input type="checkbox" checked={newClient.allowEbayImport} onChange={(e) => setNewClient({...newClient, allowEbayImport: e.target.checked})} className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600" />
-                                        <span className="text-[11px] font-bold text-gray-700 uppercase tracking-tighter">Enable eBay Link Import</span>
-                                    </label>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Email Address</label>
+                                        <input type="email" value={newClient.email} onChange={(e) => setNewClient({ ...newClient, email: e.target.value })} className="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all" placeholder="email@example.com" />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Mobile Number</label>
+                                        <input type="text" value={newClient.mobileNumber} onChange={(e) => setNewClient({ ...newClient, mobileNumber: e.target.value })} className="w-full px-5 py-3.5 bg-gray-50 border border-transparent rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all" placeholder="+1..." />
+                                    </div>
+                                </div>
+
+                                <div className="p-5 bg-indigo-50/50 rounded-[2rem] border border-indigo-100 space-y-4">
+                                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest px-1 flex items-center gap-2">
+                                        <ShieldCheck className="w-3.5 h-3.5" /> eBay Login Credentials (Optional)
+                                    </p>
+                                    <div className="space-y-3">
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">eBay ID / Username</label>
+                                            <input type="text" value={newClient.ebayAccountName} onChange={(e) => setNewClient({ ...newClient, ebayAccountName: e.target.value })} className="w-full px-4 py-2.5 bg-white border border-indigo-100 rounded-xl text-sm font-bold focus:border-indigo-500 outline-none transition-all" placeholder="eBay Username" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">eBay Password</label>
+                                            <input type="password" value={newClient.ebayPassword} onChange={(e) => setNewClient({ ...newClient, ebayPassword: e.target.value })} className="w-full px-4 py-2.5 bg-white border border-indigo-100 rounded-xl text-sm font-bold focus:border-indigo-500 outline-none transition-all" placeholder="••••••••" />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <button type="submit" className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:translate-y-[-2px] transition-all">Create Profile</button>
+
+                            <button
+                                type="submit"
+                                className="w-full py-4 mt-4 bg-indigo-600 text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest shadow-xl shadow-indigo-100 hover:translate-y-[-2px] transition-all active:scale-95"
+                            >
+                                Create Profile
+                            </button>
                         </form>
                     </div>
+                </div>
+            )}
+            {/* View Details Modal */}
+            {showViewModal && viewingClient && (
+                <div 
+                    className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+                    onClick={() => setShowViewModal(false)}
+                >
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="bg-white rounded-[3rem] w-full max-w-lg overflow-hidden shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="relative h-32 bg-indigo-600 p-8 flex items-end">
+                            <div className="absolute top-6 right-6">
+                                <button onClick={() => setShowViewModal(false)} className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xl">
+                                    <Globe className="w-8 h-8 text-indigo-600" />
+                                </div>
+                                <div className="text-white">
+                                    <h3 className="text-2xl font-black tracking-tight">{viewingClient.name}</h3>
+                                    <p className="text-indigo-100 text-[10px] font-black uppercase tracking-widest">Client Strategic Profile</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-8 space-y-8">
+                            <div className="grid grid-cols-2 gap-8">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Mail className="w-3 h-3" /> Email Address
+                                    </label>
+                                    <p className="text-sm font-bold text-gray-900">{viewingClient.email || 'Not Provided'}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Phone className="w-3 h-3" /> Mobile Number
+                                    </label>
+                                    <p className="text-sm font-bold text-gray-900">{viewingClient.mobileNumber || 'Not Provided'}</p>
+                                </div>
+                            </div>
+
+                            <div className="p-6 bg-gray-50 rounded-[2.5rem] border border-gray-100 space-y-6">
+                                <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Marketplace Access Credentials</h4>
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                            <AtSign className="w-3 h-3" /> eBay Username
+                                        </label>
+                                        <p className="text-sm font-bold text-gray-900">{viewingClient.ebayAccountName || 'Not Set'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                            <Key className="w-3 h-3" /> Password
+                                        </label>
+                                        <p className="text-sm font-bold text-gray-900 tracking-widest">••••••••</p>
+                                        <button className="text-[9px] font-black text-indigo-600 uppercase hover:underline">Show Password</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Workforce Team</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {viewingClient.assignedAgents?.length > 0 ? (
+                                        viewingClient.assignedAgents.map(a => (
+                                            <div key={a._id} className="px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center gap-2">
+                                                <User className="w-3 h-3 text-indigo-600" />
+                                                <span className="text-[11px] font-bold text-indigo-700">{a.name}</span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-xs font-bold text-gray-400 italic">No agents assigned.</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-center">
+                            <button onClick={() => setShowViewModal(false)} className="px-10 py-3.5 bg-gray-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:translate-y-[-2px] transition-all">Close Profile View</button>
+                        </div>
+                    </motion.div>
                 </div>
             )}
         </div>
