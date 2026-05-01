@@ -29,36 +29,26 @@ const CustomSelect = ({ options = [], value, onSelect, placeholder = 'Select...'
         <div className="relative w-full" ref={wrapperRef}>
             <div
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full h-14 px-5 bg-gray-50 border-2 rounded-2xl flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-indigo-600 bg-white ring-4 ring-indigo-50 shadow-sm' : 'border-transparent hover:border-indigo-100 hover:bg-white'}`}
+                className={`w-full h-10 px-4 bg-gray-50 border-2 rounded-xl flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-indigo-600 bg-white ring-4 ring-indigo-50 shadow-sm' : 'border-transparent hover:border-indigo-100 hover:bg-white'}`}
             >
                 <div className="flex items-center gap-3 flex-1 truncate">
-                    {Icon && <Icon className={`w-4 h-4 ${isOpen ? 'text-indigo-600' : 'text-gray-400'}`} />}
-                    <span className={`text-sm font-bold truncate ${value ? 'text-gray-900' : 'text-gray-400'}`}>
+                    {Icon && <Icon className={`w-3.5 h-3.5 ${isOpen ? 'text-indigo-600' : 'text-gray-400'}`} />}
+                    <span className={`text-[11px] font-bold truncate ${value ? 'text-gray-900' : 'text-gray-400'}`}>
                         {displayLabel || placeholder}
                     </span>
                 </div>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-indigo-600' : ''}`} />
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-indigo-600' : ''}`} />
             </div>
 
             <AnimatePresence>
                 {isOpen && (
                     <motion.div 
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        initial={{ opacity: 0, y: 5, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute top-full left-0 right-0 mt-3 bg-white border border-gray-200 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] z-[1000] overflow-hidden flex flex-col"
+                        exit={{ opacity: 0, y: 5, scale: 0.98 }}
+                        className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl z-[1000] overflow-hidden flex flex-col"
                     >
-                        <div className="p-4 bg-gray-50 border-b border-gray-100">
-                            <div className="relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <input
-                                    autoFocus type="text" placeholder="Search..." value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-indigo-600 transition-all"
-                                />
-                            </div>
-                        </div>
-                        <div className="max-h-64 overflow-y-auto py-2">
+                        <div className="max-h-48 overflow-y-auto py-1">
                             {filteredOptions.length > 0 ? (
                                 filteredOptions.map((opt, i) => {
                                     const label = typeof opt === 'object' ? opt.label : opt;
@@ -68,18 +58,15 @@ const CustomSelect = ({ options = [], value, onSelect, placeholder = 'Select...'
                                         <div
                                             key={i}
                                             onClick={() => { onSelect(val); setIsOpen(false); setSearchTerm(''); }}
-                                            className={`px-5 py-3.5 text-sm font-bold flex items-center justify-between cursor-pointer transition-all ${isSelected ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-600'}`}
+                                            className={`px-4 py-2 text-[10px] font-bold flex items-center justify-between cursor-pointer transition-all ${isSelected ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-600'}`}
                                         >
-                                            <div className="flex flex-col">
-                                                <span>{label}</span>
-                                                {opt.description && <span className={`text-[10px] ${isSelected ? 'text-indigo-200' : 'text-gray-400'}`}>{opt.description}</span>}
-                                            </div>
-                                            {isSelected && <Check className="w-4 h-4" />}
+                                            <span className="truncate flex-1 pr-2">{label}</span>
+                                            {isSelected && <Check className="w-3 h-3 flex-shrink-0" />}
                                         </div>
                                     );
                                 })
                             ) : (
-                                <div className="px-5 py-8 text-center text-xs font-bold text-gray-400 italic">No matches found</div>
+                                <div className="px-4 py-3 text-[10px] font-bold text-gray-400 italic text-center">No options available</div>
                             )}
                         </div>
                     </motion.div>
@@ -512,125 +499,164 @@ const ClientList = ({ user }) => {
                             <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="w-6 h-6 text-gray-400" /></button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-10 no-scrollbar">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-                                
-                                {/* LEFT COLUMN: Connectivity, Workforce & Generation Rules */}
-                                <div className="space-y-12">
-                                    {/* eBay Connection */}
-                                    <div className="space-y-4">
-                                        <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">eBay Connection</h4>
-                                        <div className={`p-6 rounded-[2rem] border transition-all ${editingClient.ebayToken ? 'bg-emerald-50 border-emerald-100' : 'bg-gray-50 border-gray-100'}`}>
-                                            {editingClient.ebayToken ? (
-                                                <div className="space-y-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-emerald-600"><Database className="w-5 h-5" /></div>
-                                                        <div>
-                                                            <p className="text-[10px] font-black text-emerald-700/50 uppercase tracking-widest">Linked Account</p>
-                                                            <p className="text-sm font-black text-emerald-900">{editingClient.ebayAccountName}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        <button onClick={() => fetchClientPolicies(editingClient._id)} className="flex-1 py-2.5 bg-white border border-emerald-200 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-100 transition-all">
-                                                            <RefreshCw className={`w-3 h-3 ${isFetchingPolicies ? 'animate-spin' : ''}`} /> Sync
-                                                        </button>
-                                                        <button onClick={() => handleDisconnectEbay(editingClient._id)} className="p-2.5 bg-white border border-rose-200 text-rose-500 rounded-xl hover:bg-rose-50 transition-all"><Unlink className="w-4 h-4" /></button>
+                        <div className="flex-1 overflow-y-auto p-8 no-scrollbar space-y-8">
+                            
+                            {/* SECTION 1: CONNECTIVITY & POLICIES */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+                                {/* eBay Connection */}
+                                <div className="flex flex-col space-y-3">
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">eBay Connection</h4>
+                                    <div className={`flex-1 p-6 rounded-[1.5rem] border transition-all flex flex-col justify-center ${editingClient.ebayToken ? 'bg-emerald-50 border-emerald-100' : 'bg-gray-50 border-gray-100'}`}>
+                                        {editingClient.ebayToken ? (
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-emerald-600"><Database className="w-5 h-5" /></div>
+                                                    <div>
+                                                        <p className="text-[9px] font-black text-emerald-700/50 uppercase tracking-widest">Linked Account</p>
+                                                        <p className="text-md font-black text-emerald-900">{editingClient.ebayAccountName}</p>
                                                     </div>
                                                 </div>
-                                            ) : (
-                                                <div className="text-center py-4 space-y-4">
-                                                    <p className="text-xs text-gray-400 font-medium px-4 leading-relaxed">No eBay account connected.</p>
-                                                    <button onClick={() => handleConnectEbay(editingClient._id)} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-100 hover:translate-y-[-2px] transition-all flex items-center justify-center gap-2">
-                                                        <Zap className="w-4 h-4" /> Connect eBay
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => fetchClientPolicies(editingClient._id)} className="flex-1 py-2.5 bg-white border border-emerald-200 text-emerald-600 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-100 transition-all">
+                                                        <RefreshCw className={`w-3 h-3 ${isFetchingPolicies ? 'animate-spin' : ''}`} /> Sync Policies
                                                     </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Assign Agent to Client */}
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Assign Agent to Client</h4>
-                                            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{editingClient.assignedAgents?.length || 0} Agents</span>
-                                        </div>
-
-                                        <div className="bg-gray-50/50 p-6 rounded-[2rem] border border-gray-100 space-y-4">
-                                            <div className="space-y-2">
-                                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Find & Add Agents</label>
-                                                <MultiAgentSelect 
-                                                    agents={agents}
-                                                    selectedIds={editingClient.assignedAgents || []}
-                                                    onToggle={(id) => {
-                                                        const current = editingClient.assignedAgents || [];
-                                                        const next = current.includes(id) ? current.filter(cid => cid !== id) : [...current, id];
-                                                        setEditingClient({ ...editingClient, assignedAgents: next });
-                                                    }}
-                                                />
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Active Workforce</label>
-                                                <div className="min-h-[48px] p-2 bg-white border border-gray-100 rounded-xl flex flex-wrap gap-2 items-start">
-                                                    {editingClient.assignedAgents?.length > 0 ? (
-                                                        editingClient.assignedAgents.map(id => {
-                                                            const agent = agents.find(a => a._id === id);
-                                                            if (!agent) return null;
-                                                            return (
-                                                                <div key={id} className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 border border-gray-100 rounded-lg shadow-sm">
-                                                                    <span className="text-[11px] font-bold text-gray-700">{agent.name}</span>
-                                                                    <button onClick={() => setEditingClient({ ...editingClient, assignedAgents: editingClient.assignedAgents.filter(cid => cid !== id) })} className="p-0.5 hover:bg-rose-50 hover:text-rose-600 rounded transition-colors"><X className="w-3 h-3" /></button>
-                                                                </div>
-                                                            );
-                                                        })
-                                                    ) : (
-                                                        <div className="w-full py-2 text-center text-[10px] font-bold text-gray-400 italic">No agents assigned.</div>
-                                                    )}
+                                                    <button onClick={() => handleDisconnectEbay(editingClient._id)} className="p-2.5 bg-white border border-rose-200 text-rose-500 rounded-xl hover:bg-rose-50 transition-all"><Unlink className="w-4 h-4" /></button>
                                                 </div>
                                             </div>
+                                        ) : (
+                                            <div className="text-center py-4 space-y-4">
+                                                <p className="text-xs text-gray-400 font-medium px-4 leading-relaxed">No eBay account connected.</p>
+                                                <button onClick={() => handleConnectEbay(editingClient._id)} className="w-full py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-100 hover:translate-y-[-2px] transition-all flex items-center justify-center gap-2">
+                                                    <Zap className="w-4 h-4" /> Connect eBay Gateway
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Business Policies */}
+                                <div className="flex flex-col space-y-3">
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Business Policies</h4>
+                                    <div className="flex-1 bg-white p-6 rounded-[1.5rem] border border-gray-100 shadow-sm flex flex-col justify-center space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {[
+                                                { label: 'Fulfillment', key: 'fulfillment', icon: Zap, options: policies.fulfillment, idField: 'fulfillmentPolicyId' },
+                                                { label: 'Payment', key: 'payment', icon: Database, options: policies.payment, idField: 'paymentPolicyId' },
+                                                { label: 'Returns', key: 'returns', icon: RefreshCw, options: policies.returns, idField: 'returnPolicyId' },
+                                                { label: 'Location', key: 'location', icon: Globe, options: policies.locations, idField: 'merchantLocationKey' }
+                                            ].map((pol) => (
+                                                <div key={pol.label} className="space-y-1.5">
+                                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">{pol.label}</label>
+                                                    <CustomSelect
+                                                        icon={pol.icon}
+                                                        placeholder={isFetchingPolicies ? '...' : `Select...`}
+                                                        options={pol.options.map(o => ({ label: o.name || o.merchantLocationKey, value: o[pol.idField] }))}
+                                                        value={editingClient.defaultPolicies?.[pol.key] ? { label: editingClient.defaultPolicies[pol.key].name || editingClient.defaultPolicies[pol.key].merchantLocationKey, value: editingClient.defaultPolicies[pol.key][pol.idField] } : null}
+                                                        onSelect={(val) => {
+                                                            const selected = pol.options.find(o => o[pol.idField] === val);
+                                                            setEditingClient({ ...editingClient, defaultPolicies: { ...editingClient.defaultPolicies, [pol.key]: selected } });
+                                                        }}
+                                                    />
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
+                                </div>
+                            </div>
 
-                                    {/* Listing Generation Rules */}
-                                    <div className="space-y-8 pt-6 border-t border-gray-100">
-                                        <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Listing Generation Rules</h4>
-                                        
-                                        <div className="space-y-6">
-                                            <div>
-                                                <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest px-1">Title Sequence</label>
-                                                <p className="text-[10px] text-gray-400 font-medium mt-1">Drag to reorder title construction.</p>
+                            {/* SECTION 2: WORKFORCE & PERMISSIONS */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch pt-2">
+                                {/* Assign Agent */}
+                                <div className="flex flex-col space-y-3">
+                                    <div className="flex items-center justify-between px-1">
+                                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Client Workforce</h4>
+                                        <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{editingClient.assignedAgents?.length || 0} Active</span>
+                                    </div>
+                                    <div className="flex-1 bg-gray-50/50 p-6 rounded-[1.5rem] border border-gray-100 flex flex-col space-y-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Add Agents</label>
+                                            <MultiAgentSelect 
+                                                agents={agents}
+                                                selectedIds={editingClient.assignedAgents || []}
+                                                onToggle={(id) => {
+                                                    const current = editingClient.assignedAgents || [];
+                                                    const next = current.includes(id) ? current.filter(cid => cid !== id) : [...current, id];
+                                                    setEditingClient({ ...editingClient, assignedAgents: next });
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5 flex-1">
+                                            <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Assigned Workforce</label>
+                                            <div className="min-h-[80px] p-3 bg-white border border-gray-100 rounded-xl flex flex-wrap gap-1.5 content-start">
+                                                {editingClient.assignedAgents?.length > 0 ? (
+                                                    editingClient.assignedAgents.map(id => {
+                                                        const agent = agents.find(a => a._id === id);
+                                                        if (!agent) return null;
+                                                        return (
+                                                            <div key={id} className="flex items-center gap-1 px-2 py-1 bg-gray-50 border border-gray-100 rounded-lg shadow-sm">
+                                                                <span className="text-[10px] font-bold text-gray-700">{agent.name}</span>
+                                                                <button onClick={() => setEditingClient({ ...editingClient, assignedAgents: editingClient.assignedAgents.filter(cid => cid !== id) })} className="p-0.5 hover:bg-rose-50 hover:text-rose-600 rounded transition-colors"><X className="w-3 h-3" /></button>
+                                                            </div>
+                                                        );
+                                                    })
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-[9px] font-bold text-gray-400 italic">No agents assigned.</div>
+                                                )}
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                                            <div className="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-[2rem] border border-dashed border-gray-200">
+                                {/* Listing Permissions */}
+                                <div className="flex flex-col space-y-3">
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Permissions</h4>
+                                    <div className="flex-1 bg-white p-6 rounded-[1.5rem] border border-gray-100 shadow-sm flex flex-col justify-between space-y-2">
+                                        {[
+                                            { label: 'API LISTING', desc: 'Direct Publishing', icon: Zap, color: 'peer-checked:bg-indigo-600', key: 'allowApiListing' },
+                                            { label: 'EXTENSION LISTING', desc: 'Manual Chrome', icon: ExternalLink, color: 'peer-checked:bg-emerald-600', key: 'allowExtensionListing' },
+                                            { label: 'AI FETCHING', desc: 'Computer Vision', icon: Sparkles, color: 'peer-checked:bg-fuchsia-600', key: 'allowAiFetching' },
+                                            { label: 'EBAY LINK IMPORT', desc: 'Marketplace Scraper', icon: LinkIcon, color: 'peer-checked:bg-blue-600', key: 'allowEbayImport' }
+                                        ].map((item) => (
+                                            <label key={item.label} className="flex items-center justify-between p-3 bg-gray-50/50 rounded-xl border border-transparent cursor-pointer hover:bg-gray-50 transition-all group">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-white rounded-lg shadow-sm group-hover:scale-105 transition-transform"><item.icon className="w-3.5 h-3.5 text-gray-400" /></div>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[11px] font-black text-gray-900 tracking-tight">{item.label}</span>
+                                                        <span className="text-[8px] text-gray-400 font-bold uppercase tracking-tighter">{item.desc}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="relative">
+                                                    <input type="checkbox" checked={editingClient[item.key]} onChange={(e) => setEditingClient({...editingClient, [item.key]: e.target.checked})} className="peer sr-only" />
+                                                    <div className={`w-10 h-5 bg-gray-200 rounded-full peer ${item.color} transition-all after:content-[''] after:absolute after:top-[2.5px] after:left-[2.5px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 shadow-inner`}></div>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* SECTION 3: LISTING GENERATION RULES */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch pt-2 border-t border-gray-100">
+                                {/* Title Sequence */}
+                                <div className="flex flex-col space-y-3">
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Title Construction</h4>
+                                    <div className="flex-1 bg-white p-6 rounded-[1.5rem] border border-gray-100 shadow-sm space-y-4">
+                                        <div>
+                                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-3">Reorder Sequence</p>
+                                            <div className="flex flex-wrap gap-1.5 p-4 bg-gray-50 rounded-[1.5rem] border border-dashed border-gray-200 mb-4">
                                                 {BASE_TITLE_FIELDS.map(f => (
-                                                    <button key={f} onClick={() => addFieldToSequence(f)} className="px-3 py-1.5 bg-white border border-gray-100 rounded-xl text-[10px] font-black text-gray-600 hover:border-indigo-600 hover:text-indigo-600 transition-all">+ {f}</button>
+                                                    <button key={f} onClick={() => addFieldToSequence(f)} className="px-2.5 py-1 bg-white border border-gray-100 rounded-lg text-[9px] font-black text-gray-600 hover:border-indigo-600 hover:text-indigo-600 transition-all">+ {f}</button>
                                                 ))}
-                                                <button onClick={addCustomTitleFieldRow} className="px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-xl text-[10px] font-black text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all">+ Custom Field</button>
+                                                <button onClick={addCustomTitleFieldRow} className="px-2.5 py-1 bg-emerald-50 border border-emerald-100 rounded-lg text-[9px] font-black text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all">+ Custom</button>
                                             </div>
 
                                             {editingClient.defaultRules.custom_title_fields?.length > 0 && (
-                                                <div className="space-y-2 bg-gray-50 border border-gray-100 rounded-[2rem] p-4">
-                                                    <h5 className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-2 mb-2">Define Custom Strings</h5>
+                                                <div className="space-y-2 bg-gray-50/80 p-4 rounded-[1.5rem] border border-gray-100 mb-4">
                                                     {editingClient.defaultRules.custom_title_fields.map((field, idx) => (
-                                                        <div key={`custom-${idx}`} className="flex items-center gap-2 animate-in slide-in-from-left-2">
-                                                            <input
-                                                                value={field}
-                                                                onChange={(e) => updateCustomTitleField(idx, e.target.value)}
-                                                                className="flex-1 h-9 px-4 rounded-xl border border-gray-200 text-xs font-bold outline-none focus:border-emerald-500 shadow-sm"
-                                                                placeholder={`Custom string ${idx + 1}...`}
-                                                            />
-                                                            <button
-                                                                onClick={() => addFieldToSequence(field)}
-                                                                className="h-9 px-3 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-100"
-                                                            >
-                                                                Use
-                                                            </button>
-                                                            <button
-                                                                onClick={() => removeCustomTitleField(idx)}
-                                                                className="p-2 rounded-xl text-rose-600 hover:bg-rose-50"
-                                                            >
-                                                                <X className="w-4 h-4" />
-                                                            </button>
+                                                        <div key={`custom-${idx}`} className="flex items-center gap-2">
+                                                            <input value={field} onChange={(e) => updateCustomTitleField(idx, e.target.value)} className="flex-1 h-8 px-3 rounded-lg border border-gray-200 text-[11px] font-bold outline-none focus:border-emerald-500 shadow-sm" placeholder="Text..." />
+                                                            <button onClick={() => addFieldToSequence(field)} className="h-8 px-3 rounded-lg bg-emerald-600 text-white text-[9px] font-black uppercase tracking-widest">Use</button>
+                                                            <button onClick={() => removeCustomTitleField(idx)} className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50"><X className="w-3.5 h-3.5" /></button>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -640,114 +666,57 @@ const ClientList = ({ user }) => {
                                                 axis="x"
                                                 values={editingClient.defaultRules?.title_sequence || []}
                                                 onReorder={(next) => setEditingClient({ ...editingClient, defaultRules: { ...editingClient.defaultRules, title_sequence: next } })}
-                                                className="flex flex-wrap gap-2 py-2"
+                                                className="flex flex-wrap gap-1.5"
                                             >
                                                 {(editingClient.defaultRules?.title_sequence || []).map((field, idx) => (
-                                                    <Reorder.Item key={field} value={field} className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl shadow-lg cursor-grab active:cursor-grabbing">
-                                                        <span className="text-[11px] font-black uppercase tracking-wider">{idx + 1}. {field}</span>
-                                                        <X onClick={() => removeFieldFromSequence(field)} className="w-3.5 h-3.5 cursor-pointer hover:scale-125 transition-transform" />
+                                                    <Reorder.Item key={field} value={field} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl shadow-md cursor-grab active:cursor-grabbing">
+                                                        <span className="text-[10px] font-black uppercase tracking-wider">{idx + 1}. {field}</span>
+                                                        <X onClick={() => removeFieldFromSequence(field)} className="w-3 h-3 cursor-pointer hover:scale-125 transition-transform" />
                                                     </Reorder.Item>
                                                 ))}
                                             </Reorder.Group>
                                         </div>
-
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest px-1">AI Description Strategy</label>
-                                                <textarea 
-                                                    rows="4"
-                                                    value={editingClient.defaultRules.description_prompt}
-                                                    onChange={(e) => setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, description_prompt: e.target.value}})}
-                                                    placeholder="Enter AI prompt instructions..."
-                                                    className="w-full p-5 bg-gray-50 border border-transparent rounded-[2rem] text-sm font-medium focus:bg-white focus:border-indigo-500 outline-none transition-all resize-none shadow-inner"
-                                                />
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest px-1">Default Condition Notes</label>
-                                                <CustomSelect 
-                                                    icon={ShieldCheck}
-                                                    placeholder="Select pre-saved note..."
-                                                    options={[...savedNotes.map(n => ({ label: n, value: n })), { label: '+ Write Custom Note...', value: CUSTOM_NOTE_OPTION, description: 'Enter your own text' }]}
-                                                    value={conditionSelection === CUSTOM_NOTE_OPTION ? CUSTOM_NOTE_OPTION : conditionSelection}
-                                                    onSelect={(val) => {
-                                                        setConditionSelection(val);
-                                                        if (val === CUSTOM_NOTE_OPTION) {
-                                                            setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, condition_note: ''}});
-                                                        } else {
-                                                            setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, condition_note: val, custom_condition_note: ''}});
-                                                        }
-                                                    }}
-                                                />
-                                                {conditionSelection === CUSTOM_NOTE_OPTION && (
-                                                    <textarea 
-                                                        rows="3"
-                                                        value={editingClient.defaultRules.custom_condition_note}
-                                                        onChange={(e) => setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, custom_condition_note: e.target.value}})}
-                                                        placeholder="Type custom note..."
-                                                        className="w-full p-4 bg-gray-50 border border-transparent rounded-2xl text-sm font-medium focus:bg-white focus:border-indigo-500 outline-none transition-all resize-none shadow-inner"
-                                                    />
-                                                )}
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
 
-                                {/* RIGHT COLUMN: Policies & Permissions */}
-                                <div className="space-y-12">
-                                    {/* Business Policies */}
-                                    <div className="space-y-4">
-                                        <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Business Policies</h4>
-                                        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-6">
-                                            <div className="grid grid-cols-2 gap-6">
-                                                {[
-                                                    { label: 'Fulfillment', key: 'fulfillment', icon: Zap, options: policies.fulfillment, idField: 'fulfillmentPolicyId' },
-                                                    { label: 'Payment', key: 'payment', icon: Database, options: policies.payment, idField: 'paymentPolicyId' },
-                                                    { label: 'Returns', key: 'returns', icon: RefreshCw, options: policies.returns, idField: 'returnPolicyId' },
-                                                    { label: 'Location', key: 'location', icon: Globe, options: policies.locations, idField: 'merchantLocationKey' }
-                                                ].map((pol) => (
-                                                    <div key={pol.label} className="space-y-2">
-                                                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">{pol.label}</label>
-                                                        <CustomSelect
-                                                            icon={pol.icon}
-                                                            placeholder={isFetchingPolicies ? '...' : `Select...`}
-                                                            options={pol.options.map(o => ({ label: o.name || o.merchantLocationKey, value: o[pol.idField] }))}
-                                                            value={editingClient.defaultPolicies?.[pol.key] ? { label: editingClient.defaultPolicies[pol.key].name || editingClient.defaultPolicies[pol.key].merchantLocationKey, value: editingClient.defaultPolicies[pol.key][pol.idField] } : null}
-                                                            onSelect={(val) => {
-                                                                const selected = pol.options.find(o => o[pol.idField] === val);
-                                                                setEditingClient({ ...editingClient, defaultPolicies: { ...editingClient.defaultPolicies, [pol.key]: selected } });
-                                                            }}
-                                                        />
-                                                    </div>
-                                                ))}
-                                            </div>
+                                {/* AI & Condition */}
+                                <div className="flex flex-col space-y-3">
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">AI & Condition</h4>
+                                    <div className="flex-1 bg-gray-50/50 p-6 rounded-[1.5rem] border border-gray-100 flex flex-col space-y-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[9px] font-black text-gray-900 uppercase tracking-widest px-1">AI Prompt Strategy</label>
+                                            <textarea 
+                                                rows="4"
+                                                value={editingClient.defaultRules.description_prompt}
+                                                onChange={(e) => setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, description_prompt: e.target.value}})}
+                                                className="w-full p-4 bg-white border border-gray-100 rounded-[1.5rem] text-[13px] font-medium focus:border-indigo-500 outline-none transition-all resize-none shadow-sm"
+                                            />
                                         </div>
-                                    </div>
 
-                                    {/* Listing Permissions */}
-                                    <div className="space-y-4">
-                                        <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Listing Permissions</h4>
-                                        <div className="bg-gray-50/50 p-8 rounded-[2.5rem] border border-gray-100 space-y-6">
-                                            {[
-                                                { label: 'API LISTING', desc: 'High-Speed Direct Publishing', icon: Zap, color: 'peer-checked:bg-indigo-600', key: 'allowApiListing' },
-                                                { label: 'EXTENSION LISTING', desc: 'Manual Chrome Integration', icon: ExternalLink, color: 'peer-checked:bg-emerald-600', key: 'allowExtensionListing' },
-                                                { label: 'AI FETCHING', desc: 'Computer Vision Detection', icon: Sparkles, color: 'peer-checked:bg-fuchsia-600', key: 'allowAiFetching' },
-                                                { label: 'EBAY LINK IMPORT', desc: 'Marketplace Scraper', icon: LinkIcon, color: 'peer-checked:bg-blue-600', key: 'allowEbayImport' }
-                                            ].map((item) => (
-                                                <label key={item.label} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-50 cursor-pointer hover:shadow-md transition-all group">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="p-2.5 bg-gray-50 rounded-xl group-hover:scale-110 transition-transform"><item.icon className="w-4 h-4 text-gray-400" /></div>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-xs font-black text-gray-900 tracking-tight">{item.label}</span>
-                                                            <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">{item.desc}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="relative">
-                                                        <input type="checkbox" checked={editingClient[item.key]} onChange={(e) => setEditingClient({...editingClient, [item.key]: e.target.checked})} className="peer sr-only" />
-                                                        <div className={`w-12 h-6 bg-gray-200 rounded-full peer ${item.color} transition-all after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-white after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:after:translate-x-6 shadow-inner`}></div>
-                                                    </div>
-                                                </label>
-                                            ))}
+                                        <div className="space-y-2">
+                                            <label className="text-[9px] font-black text-gray-900 uppercase tracking-widest px-1">Condition Notes</label>
+                                            <CustomSelect 
+                                                icon={ShieldCheck}
+                                                options={[...DEFAULT_CONDITION_NOTES.map(n => ({ label: n, value: n })), { label: '+ Custom Note...', value: CUSTOM_NOTE_OPTION }]}
+                                                value={conditionSelection === CUSTOM_NOTE_OPTION ? CUSTOM_NOTE_OPTION : conditionSelection}
+                                                onSelect={(val) => {
+                                                    setConditionSelection(val);
+                                                    if (val === CUSTOM_NOTE_OPTION) {
+                                                        setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, condition_note: ''}});
+                                                    } else {
+                                                        setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, condition_note: val, custom_condition_note: ''}});
+                                                    }
+                                                }}
+                                            />
+                                            {conditionSelection === CUSTOM_NOTE_OPTION && (
+                                                <textarea 
+                                                    rows="2"
+                                                    value={editingClient.defaultRules.custom_condition_note}
+                                                    onChange={(e) => setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, custom_condition_note: e.target.value}})}
+                                                    placeholder="Type client-specific note..."
+                                                    className="w-full p-4 bg-white border border-gray-100 rounded-[1.5rem] text-[13px] font-medium focus:border-indigo-500 outline-none transition-all resize-none shadow-sm"
+                                                />
+                                            )}
                                         </div>
                                     </div>
                                 </div>
