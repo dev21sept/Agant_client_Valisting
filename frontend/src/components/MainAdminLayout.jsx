@@ -130,8 +130,8 @@ const MainAdminLayout = ({ children, onLogout, user }) => {
                                 <div className="flex flex-col mb-1">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Active Account</p>
                                     <div className="flex flex-col">
-                                        <p className="text-xs font-black text-gray-900 leading-tight truncate">
-                                            {ebayStatus.sellerName || 'Not Connected'}
+                                        <p className="text-xs font-black text-gray-900 leading-tight">
+                                            {ebayStatus.sellerName || (ebayStatus.connected ? 'Connected User' : 'Not Connected')}
                                         </p>
                                         {ebayStatus.connected && ebayStatus.sellerEmail && (
                                             <p className="text-[9px] text-gray-400 font-bold truncate mt-0.5">
