@@ -16,6 +16,7 @@ const BASE_TITLE_FIELDS = [
     'Product Type',
     'Model / Series',
     'Size',
+    'Size word with Size',
     'Color',
     'Material',
     'Style / Use Case',

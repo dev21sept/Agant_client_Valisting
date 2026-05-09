@@ -333,10 +333,12 @@ CRITICAL: DO NOT include 'condition_name' or any related state. This will be fet
             .map(key => {
                 let val = standardizedParts[key] || '';
                 val = String(val).replace(/,/g, ''); // Remove commas
-                // If it's the Size field, prepend "Size " for clarity
-                if (key.toLowerCase().includes('size') && val && !val.toLowerCase().startsWith('size')) {
+                
+                // If it's the specific "Size word with Size" field, prepend "Size "
+                if (key === 'Size word with Size' && val && !val.toLowerCase().startsWith('size')) {
                     return `Size ${val}`;
                 }
+                // Standard "Size" field or other fields remain as-is
                 return val;
             })
             .filter(val => val && val.toString().trim() !== '' && val !== 'null')

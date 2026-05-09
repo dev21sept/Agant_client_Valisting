@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Globe, Plus, Search, User, Link2, Settings2, Trash2, Edit2, ShieldAlert, ShieldCheck, X, Zap, Database, ExternalLink, Unlink, RefreshCw, Save, CheckCircle2, ChevronDown, Check, Sparkles, Link as LinkIcon, Mail, Phone, Key, AtSign, Eye, EyeOff } from 'lucide-react';
 import { Reorder, motion, AnimatePresence } from 'framer-motion';
-import { getClients, createClient, getAgents, updateClient, deleteClient, disconnectClientEbay, getClientPolicies, getEbayAuthUrl, getSavedConditionNotes } from '../../services/api';
+import { getClients, createClient, getAgents, updateClient, deleteClient, disconnectClientEbay, getClientPolicies, getEbayAuthUrl, getSavedConditionNotes, createFetchRule } from '../../services/api';
 import { useToast } from '../../components/Toast';
+import RuleManagementModal from '../../components/RuleManagementModal';
 
 // --- PREMIUM CUSTOM SELECT COMPONENT ---
 const CustomSelect = ({ options = [], value, onSelect, placeholder = 'Select...', icon: Icon }) => {
@@ -48,6 +49,19 @@ const CustomSelect = ({ options = [], value, onSelect, placeholder = 'Select...'
                         exit={{ opacity: 0, y: 5, scale: 0.98 }}
                         className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl z-[1000] overflow-hidden flex flex-col"
                     >
+                        <div className="p-2.5 bg-gray-50 border-b border-gray-100">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+                                <input 
+                                    autoFocus
+                                    type="text"
+                                    placeholder="Search..."
+                                    className="w-full h-8 pl-8 pr-3 rounded-lg border border-gray-200 text-[10px] font-bold outline-none focus:border-indigo-600 bg-white"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                        </div>
                         <div className="max-h-48 overflow-y-auto py-1">
                             {filteredOptions.length > 0 ? (
                                 filteredOptions.map((opt, i) => {
@@ -82,7 +96,9 @@ const MultiAgentSelect = ({ agents = [], selectedIds = [], onToggle }) => {
     const wrapperRef = React.useRef(null);
 
     React.useEffect(() => {
-        const handleClickOutside = (e) => { if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setIsOpen(false); };
+        const handleClickOutside = (e) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(e.target)) setIsOpen(false);
+        };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
@@ -91,9 +107,9 @@ const MultiAgentSelect = ({ agents = [], selectedIds = [], onToggle }) => {
 
     return (
         <div className="relative w-full" ref={wrapperRef}>
-            <div
+            <div 
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-full h-12 px-4 bg-gray-50 border-2 rounded-xl flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-indigo-600 bg-white ring-4 ring-indigo-50' : 'border-transparent hover:border-indigo-100 hover:bg-white'}`}
+                className={`w-full px-4 py-3 bg-white border border-gray-100 rounded-2xl flex items-center justify-between cursor-pointer transition-all hover:border-indigo-200 ${isOpen ? 'ring-2 ring-indigo-50 border-indigo-400' : ''}`}
             >
                 <div className="flex items-center gap-3">
                     <User className={`w-4 h-4 ${isOpen ? 'text-indigo-600' : 'text-gray-400'}`} />
@@ -140,7 +156,7 @@ const MultiAgentSelect = ({ agents = [], selectedIds = [], onToggle }) => {
 };
 
 const BASE_TITLE_FIELDS = [
-    'Brand', 'Product Type', 'Model / Series', 'Size', 'Color', 'Material', 'Style / Use Case', 'Gender / Department'
+    'Brand', 'Product Type', 'Model / Series', 'Size', 'Size word with Size', 'Color', 'Material', 'Style / Use Case', 'Gender / Department'
 ];
 
 const DEFAULT_CONDITION_NOTES = [
@@ -160,6 +176,7 @@ const ClientList = ({ user }) => {
     const [showViewModal, setShowViewModal] = useState(false);
     const [editingClient, setEditingClient] = useState(null);
     const [viewingClient, setViewingClient] = useState(null);
+    const [showRuleModal, setShowRuleModal] = useState(false);
     const [policies, setPolicies] = useState({ fulfillment: [], payment: [], returns: [], locations: [] });
     const [isFetchingPolicies, setIsFetchingPolicies] = useState(false);
     const [savedNotes, setSavedNotes] = useState(DEFAULT_CONDITION_NOTES);
@@ -174,6 +191,9 @@ const ClientList = ({ user }) => {
         ebayAccountName: '',
         ebayPassword: ''
     });
+
+    const [ruleSaveName, setRuleSaveName] = useState('');
+    const [isSavingRule, setIsSavingRule] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -222,7 +242,7 @@ const ClientList = ({ user }) => {
         const initializedClient = {
             ...client,
             defaultRules: {
-                title_sequence: [...BASE_TITLE_FIELDS],
+                title_sequence: [],
                 description_prompt: '',
                 condition_note: '',
                 custom_condition_note: '',
@@ -301,6 +321,52 @@ const ClientList = ({ user }) => {
         } catch (error) {
             addToast('Failed to delete client', 'error');
         }
+    };
+
+    const handleSaveCurrentAsRule = async () => {
+        if (!ruleSaveName.trim()) {
+            addToast('Please enter a name for the rule', 'warning');
+            return;
+        }
+        
+        setIsSavingRule(true);
+        try {
+            const ruleData = {
+                rule_name: ruleSaveName.trim(),
+                clientId: editingClient._id,
+                title_sequence: editingClient.defaultRules.title_sequence,
+                description_prompt: editingClient.defaultRules.description_prompt,
+                condition_note: editingClient.defaultRules.condition_note,
+                condition_note_mode: editingClient.defaultRules.condition_note_mode,
+                custom_title_fields: editingClient.defaultRules.custom_title_fields,
+                custom_condition_note: editingClient.defaultRules.custom_condition_note
+            };
+            
+            await createFetchRule(ruleData);
+            addToast('Rule saved successfully!', 'success');
+            resetRuleFields();
+        } catch (error) {
+            const msg = error.response?.data?.error || error.message;
+            addToast('Failed to save rule: ' + msg, 'error');
+        } finally {
+            setIsSavingRule(false);
+        }
+    };
+
+    const resetRuleFields = () => {
+        setEditingClient(prev => ({
+            ...prev,
+            defaultRules: {
+                ...prev.defaultRules,
+                title_sequence: [],
+                description_prompt: '',
+                condition_note: '',
+                custom_condition_note: '',
+                custom_title_fields: []
+            }
+        }));
+        setConditionSelection('');
+        setRuleSaveName('');
     };
 
     // Helper functions for title sequence
@@ -600,32 +666,29 @@ const ClientList = ({ user }) => {
                                                         );
                                                     })
                                                 ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-[9px] font-bold text-gray-400 italic">No agents assigned.</div>
+                                                    <span className="text-[10px] font-bold text-gray-300 italic px-2">No agents linked.</span>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Listing Permissions */}
+                                {/* Permissions */}
                                 <div className="flex flex-col space-y-3">
-                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Permissions</h4>
-                                    <div className="flex-1 bg-white p-6 rounded-[1.5rem] border border-gray-100 shadow-sm flex flex-col justify-between space-y-2">
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Toolbox Access</h4>
+                                    <div className="flex-1 bg-white p-6 rounded-[1.5rem] border border-gray-100 shadow-sm grid grid-cols-1 gap-3">
                                         {[
-                                            { label: 'API LISTING', desc: 'Direct Publishing', icon: Zap, color: 'peer-checked:bg-indigo-600', key: 'allowApiListing' },
-                                            { label: 'EXTENSION LISTING', desc: 'Manual Chrome', icon: ExternalLink, color: 'peer-checked:bg-emerald-600', key: 'allowExtensionListing' },
-                                            { label: 'AI FETCHING', desc: 'Computer Vision', icon: Sparkles, color: 'peer-checked:bg-fuchsia-600', key: 'allowAiFetching' },
-                                            { label: 'EBAY LINK IMPORT', desc: 'Marketplace Scraper', icon: LinkIcon, color: 'peer-checked:bg-blue-600', key: 'allowEbayImport' }
+                                            { label: 'AI Product Fetching', key: 'allowAiFetching', desc: 'Auto-scan & analyze images', color: 'peer-checked:bg-indigo-600' },
+                                            { label: 'eBay Marketplace Import', key: 'allowEbayImport', desc: 'Import live listing data', color: 'peer-checked:bg-emerald-600' },
+                                            { label: 'Direct API Publication', key: 'allowApiListing', desc: 'Push directly to eBay servers', color: 'peer-checked:bg-blue-600' },
+                                            { label: 'Chrome Extension Link', key: 'allowExtensionListing', desc: 'Sync via browser extension', color: 'peer-checked:bg-purple-600' }
                                         ].map((item) => (
                                             <label key={item.label} className="flex items-center justify-between p-3 bg-gray-50/50 rounded-xl border border-transparent cursor-pointer hover:bg-gray-50 transition-all group">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 bg-white rounded-lg shadow-sm group-hover:scale-105 transition-transform"><item.icon className="w-3.5 h-3.5 text-gray-400" /></div>
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[11px] font-black text-gray-900 tracking-tight">{item.label}</span>
-                                                        <span className="text-[8px] text-gray-400 font-bold uppercase tracking-tighter">{item.desc}</span>
-                                                    </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[11px] font-black text-gray-900 tracking-tight">{item.label}</span>
+                                                    <span className="text-[8px] text-gray-400 font-bold uppercase tracking-tighter">{item.desc}</span>
                                                 </div>
-                                                <div className="relative">
+                                                <div className="relative inline-flex items-center cursor-pointer">
                                                     <input type="checkbox" checked={editingClient[item.key]} onChange={(e) => setEditingClient({...editingClient, [item.key]: e.target.checked})} className="peer sr-only" />
                                                     <div className={`w-10 h-5 bg-gray-200 rounded-full peer ${item.color} transition-all after:content-[''] after:absolute after:top-[2.5px] after:left-[2.5px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 shadow-inner`}></div>
                                                 </div>
@@ -636,22 +699,53 @@ const ClientList = ({ user }) => {
                             </div>
 
                             {/* SECTION 3: LISTING GENERATION RULES */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch pt-2 border-t border-gray-100">
-                                {/* Title Sequence */}
-                                <div className="flex flex-col space-y-3">
-                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Title Construction</h4>
-                                    <div className="flex-1 bg-white p-6 rounded-[1.5rem] border border-gray-100 shadow-sm space-y-4">
+                            <div className="pt-2 border-t border-gray-100">
+                                <div className="flex items-center justify-between mb-4 px-1">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Sparkles className="w-4 h-4" /></div>
                                         <div>
-                                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-3">Reorder Sequence</p>
-                                            <div className="flex flex-wrap gap-1.5 p-4 bg-gray-50 rounded-[1.5rem] border border-dashed border-gray-200 mb-4">
-                                                {BASE_TITLE_FIELDS.map(f => (
-                                                    <button key={f} onClick={() => addFieldToSequence(f)} className="px-2.5 py-1 bg-white border border-gray-100 rounded-lg text-[9px] font-black text-gray-600 hover:border-indigo-600 hover:text-indigo-600 transition-all">+ {f}</button>
-                                                ))}
-                                                <button onClick={addCustomTitleFieldRow} className="px-2.5 py-1 bg-emerald-50 border border-emerald-100 rounded-lg text-[9px] font-black text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all">+ Custom</button>
+                                            <h4 className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Master Rule Strategies</h4>
+                                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tight">Configure multiple fetch behaviors for agents</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mt-2 mb-8 p-4 bg-gray-50/50 border border-gray-100 rounded-[1.5rem] flex items-center gap-3">
+                                    <div className="relative flex-1">
+                                        <input 
+                                            type="text" 
+                                            placeholder="Enter rule name to save..." 
+                                            value={ruleSaveName}
+                                            onChange={(e) => setRuleSaveName(e.target.value)}
+                                            className="w-full h-9 pl-4 pr-4 bg-white border border-gray-200 rounded-xl text-[11px] font-bold outline-none focus:border-indigo-500 shadow-sm transition-all"
+                                        />
+                                    </div>
+                                    <button 
+                                        type="button"
+                                        onClick={resetRuleFields}
+                                        className="h-9 px-4 bg-white border border-gray-200 text-gray-500 rounded-xl hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all flex items-center gap-2 font-black text-[9px] uppercase tracking-widest shadow-sm"
+                                        title="Clear All Fields"
+                                    >
+                                        <RefreshCw className="w-3.5 h-3.5" /> Clear Fields
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+                                    {/* Title Construction */}
+                                    <div className="flex flex-col space-y-3">
+                                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Title Construction</h4>
+                                        <div className="flex-1 bg-white p-6 rounded-[1.5rem] border border-gray-100 shadow-sm space-y-4">
+                                            <div>
+                                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1 mb-2 block">Quick-Add Fields</label>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {BASE_TITLE_FIELDS.map(f => (
+                                                        <button key={f} onClick={() => addFieldToSequence(f)} className="px-2.5 py-1 bg-white border border-gray-100 rounded-lg text-[9px] font-black text-gray-600 hover:border-indigo-600 hover:text-indigo-600 transition-all">+ {f}</button>
+                                                    ))}
+                                                    <button onClick={addCustomTitleFieldRow} className="px-2.5 py-1 bg-emerald-50 border border-emerald-100 rounded-lg text-[9px] font-black text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all">+ Custom</button>
+                                                </div>
                                             </div>
 
                                             {editingClient.defaultRules.custom_title_fields?.length > 0 && (
-                                                <div className="space-y-2 bg-gray-50/80 p-4 rounded-[1.5rem] border border-gray-100 mb-4">
+                                                <div className="space-y-2 py-2 border-y border-gray-50">
                                                     {editingClient.defaultRules.custom_title_fields.map((field, idx) => (
                                                         <div key={`custom-${idx}`} className="flex items-center gap-2">
                                                             <input value={field} onChange={(e) => updateCustomTitleField(idx, e.target.value)} className="flex-1 h-8 px-3 rounded-lg border border-gray-200 text-[11px] font-bold outline-none focus:border-emerald-500 shadow-sm" placeholder="Text..." />
@@ -677,49 +771,69 @@ const ClientList = ({ user }) => {
                                             </Reorder.Group>
                                         </div>
                                     </div>
-                                </div>
 
-                                {/* AI & Condition */}
-                                <div className="flex flex-col space-y-3">
-                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">AI & Condition</h4>
-                                    <div className="flex-1 bg-gray-50/50 p-6 rounded-[1.5rem] border border-gray-100 flex flex-col space-y-4">
-                                        <div className="space-y-1.5">
-                                            <label className="text-[9px] font-black text-gray-900 uppercase tracking-widest px-1">AI Prompt Strategy</label>
-                                            <textarea 
-                                                rows="4"
-                                                value={editingClient.defaultRules.description_prompt}
-                                                onChange={(e) => setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, description_prompt: e.target.value}})}
-                                                className="w-full p-4 bg-white border border-gray-100 rounded-[1.5rem] text-[13px] font-medium focus:border-indigo-500 outline-none transition-all resize-none shadow-sm"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-[9px] font-black text-gray-900 uppercase tracking-widest px-1">Condition Notes</label>
-                                            <CustomSelect 
-                                                icon={ShieldCheck}
-                                                options={[...DEFAULT_CONDITION_NOTES.map(n => ({ label: n, value: n })), { label: '+ Custom Note...', value: CUSTOM_NOTE_OPTION }]}
-                                                value={conditionSelection === CUSTOM_NOTE_OPTION ? CUSTOM_NOTE_OPTION : conditionSelection}
-                                                onSelect={(val) => {
-                                                    setConditionSelection(val);
-                                                    if (val === CUSTOM_NOTE_OPTION) {
-                                                        setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, condition_note: ''}});
-                                                    } else {
-                                                        setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, condition_note: val, custom_condition_note: ''}});
-                                                    }
-                                                }}
-                                            />
-                                            {conditionSelection === CUSTOM_NOTE_OPTION && (
+                                    {/* AI & Condition */}
+                                    <div className="flex flex-col space-y-3">
+                                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">AI & Condition</h4>
+                                        <div className="flex-1 bg-gray-50/50 p-6 rounded-[1.5rem] border border-gray-100 flex flex-col space-y-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest px-1">Global AI Instructions</label>
                                                 <textarea 
-                                                    rows="2"
-                                                    value={editingClient.defaultRules.custom_condition_note}
-                                                    onChange={(e) => setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, custom_condition_note: e.target.value}})}
-                                                    placeholder="Type client-specific note..."
+                                                    rows="3"
+                                                    value={editingClient.defaultRules.description_prompt}
+                                                    onChange={(e) => setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, description_prompt: e.target.value}})}
                                                     className="w-full p-4 bg-white border border-gray-100 rounded-[1.5rem] text-[13px] font-medium focus:border-indigo-500 outline-none transition-all resize-none shadow-sm"
                                                 />
-                                            )}
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-black text-gray-900 uppercase tracking-widest px-1">Condition Notes</label>
+                                                <CustomSelect 
+                                                    icon={ShieldCheck}
+                                                    options={[...DEFAULT_CONDITION_NOTES.map(n => ({ label: n, value: n })), { label: '+ Custom Note...', value: CUSTOM_NOTE_OPTION }]}
+                                                    value={conditionSelection === CUSTOM_NOTE_OPTION ? CUSTOM_NOTE_OPTION : conditionSelection}
+                                                    onSelect={(val) => {
+                                                        setConditionSelection(val);
+                                                        if (val === CUSTOM_NOTE_OPTION) {
+                                                            setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, condition_note: ''}});
+                                                        } else {
+                                                            setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, condition_note: val, custom_condition_note: ''}});
+                                                        }
+                                                    }}
+                                                />
+                                                {conditionSelection === CUSTOM_NOTE_OPTION && (
+                                                    <textarea 
+                                                        rows="2"
+                                                        value={editingClient.defaultRules.custom_condition_note}
+                                                        onChange={(e) => setEditingClient({...editingClient, defaultRules: {...editingClient.defaultRules, custom_condition_note: e.target.value}})}
+                                                        placeholder="Type client-specific note..."
+                                                        className="w-full p-4 bg-white border border-gray-100 rounded-[1.5rem] text-[13px] font-medium focus:border-indigo-500 outline-none transition-all resize-none shadow-sm"
+                                                    />
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Rule Actions Footer */}
+                                <div className="mt-8 pt-6 border-t border-gray-50 flex items-center justify-end gap-3">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setShowRuleModal(true)}
+                                        className="h-9 px-5 bg-white border border-gray-200 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center gap-2 shadow-sm"
+                                    >
+                                        <Database className="w-3.5 h-3.5" /> View Rules
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={handleSaveCurrentAsRule}
+                                        disabled={isSavingRule}
+                                        className="h-9 px-6 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md shadow-indigo-100 hover:translate-y-[-1px] transition-all flex items-center gap-2 disabled:opacity-50"
+                                    >
+                                        {isSavingRule ? 'Saving...' : <><Save className="w-3.5 h-3.5" /> Save Rule</>}
+                                    </button>
+                                </div>
+
                             </div>
                         </div>
 
@@ -796,6 +910,15 @@ const ClientList = ({ user }) => {
                     </div>
                 </div>
             )}
+            {/* Rule Management Modal */}
+            {showRuleModal && editingClient && (
+                <RuleManagementModal 
+                    clientId={editingClient._id}
+                    clientName={editingClient.name}
+                    onClose={() => setShowRuleModal(false)}
+                />
+            )}
+
             {/* View Details Modal */}
             {showViewModal && viewingClient && (
                 <div 

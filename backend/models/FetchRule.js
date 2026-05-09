@@ -31,6 +31,11 @@ const fetchRuleSchema = new mongoose.Schema(
         custom_condition_note: {
             type: String,
             default: ''
+        },
+        clientId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Client',
+            default: null
         }
     },
     {
@@ -38,6 +43,6 @@ const fetchRuleSchema = new mongoose.Schema(
     }
 );
 
-fetchRuleSchema.index({ rule_name: 1 }, { unique: true });
+fetchRuleSchema.index({ rule_name: 1, clientId: 1 }, { unique: true });
 
 module.exports = mongoose.model('FetchRule', fetchRuleSchema);

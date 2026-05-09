@@ -36,10 +36,10 @@ const connectMongoDB = async () => {
                 const db = mongooseInstance.connection.db;
                 const collections = await db.listCollections({ name: 'clients' }).toArray();
                 if (collections.length > 0) {
-                    await db.collection('clients').dropIndex('email_1').catch(e => {
-                        // Index might not exist or already dropped, ignore
-                    });
-                    console.log('🧹 Cleanup: email_1 index dropped from clients collection');
+                    const clientColl = db.collection('clients');
+                    await clientColl.dropIndex('code_1').catch(() => {});
+                    await clientColl.dropIndex('email_1').catch(() => {});
+                    console.log('🧹 Cleanup: Legacy indexes dropped from clients collection');
                 }
             } catch (err) {
                 // Ignore index errors

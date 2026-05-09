@@ -154,8 +154,8 @@ export const searchCategories = async (query) => {
     return response.data;
 };
 
-export const getFetchRules = async () => {
-    const response = await api.get('/fetch-rules');
+export const getFetchRules = async (clientId) => {
+    const response = await api.get(`/fetch-rules${clientId ? `?clientId=${clientId}` : ''}`);
     return response.data;
 };
 

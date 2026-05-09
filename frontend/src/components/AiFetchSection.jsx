@@ -93,22 +93,29 @@ const AiFetchSection = ({ user, onDataFetched, onAnalyzingStart }) => {
     const fileInputRef = useRef(null);
 
     useEffect(() => {
-        if (user?.role === 'agent' && user.defaultRules) {
-            const clientRule = {
-                _id: 'client_rule',
-                rule_name: 'Client Master Config',
-                ...user.defaultRules
-            };
-            setRules([clientRule]);
-            setSelectedRuleId('client_rule');
-            setLoadingRules(false);
-            return;
-        }
-
         const loadRules = async () => {
             try {
-                const response = await getFetchRules();
-                const loadedRules = response?.data || [];
+                // If agent, fetch rules for their client. Otherwise fetch all/global.
+                const clientId = user?.role === 'agent' ? user.clientId : undefined;
+                
+                let loadedRules = [];
+                // Only call API if we have a clientId (for client-specific rules) 
+                // or if we are an admin (clientId is undefined, which returns global rules)
+                if (user?.role !== 'agent' || clientId) {
+                    const response = await getFetchRules(clientId);
+                    loadedRules = response?.data || [];
+                }
+                
+                // Only inject legacy "Client Master Config" if NO custom rules exist for this client
+                if (user?.role === 'agent' && user.defaultRules && loadedRules.length === 0) {
+                    const clientRule = {
+                        _id: 'client_rule',
+                        rule_name: 'Client Master Config',
+                        ...user.defaultRules
+                    };
+                    loadedRules = [clientRule, ...loadedRules];
+                }
+
                 setRules(loadedRules);
                 if (loadedRules.length > 0) {
                     setSelectedRuleId(loadedRules[0]._id);
@@ -285,8 +292,7 @@ const AiFetchSection = ({ user, onDataFetched, onAnalyzingStart }) => {
 
     return (
         <div className="card p-6 md:p-8 space-y-6 max-w-7xl mx-auto bg-white border border-gray-100 shadow-sm rounded-3xl">
-            {(!user || user.role === 'admin') && (
-                <div className="border border-indigo-100 bg-indigo-50/40 rounded-2xl p-4 space-y-3">
+            <div className="border border-indigo-100 bg-indigo-50/40 rounded-2xl p-4 space-y-3">
                     <div className="flex items-center justify-between">
                         <h3 className="text-[11px] font-black text-indigo-900 uppercase tracking-[0.2em]">AI Rule Setup</h3>
                         <span className="text-[10px] text-indigo-600 font-bold">{loadingRules ? 'Loading...' : `${rules.length} rules`}</span>
@@ -327,7 +333,6 @@ const AiFetchSection = ({ user, onDataFetched, onAnalyzingStart }) => {
                         </div>
                     )}
                 </div>
-            )}
 
             <div className="space-y-4">
                 <div className="flex gap-2">

@@ -14,12 +14,28 @@ const normalizePayload = (body = {}) => ({
     condition_note: String(body.condition_note || '').trim(),
     condition_note_mode: body.condition_note_mode === 'fixed' ? 'fixed' : 'selected',
     custom_title_fields: normalizeArray(body.custom_title_fields),
-    custom_condition_note: String(body.custom_condition_note || '').trim()
+    custom_condition_note: String(body.custom_condition_note || '').trim(),
+    clientId: body.clientId || null
 });
 
 exports.getRules = async (req, res) => {
     try {
-        const rules = await FetchRule.find().sort({ createdAt: -1 });
+        const { clientId } = req.query;
+        let query = {};
+        
+        if (clientId) {
+            // STRICT: Fetch ONLY rules for this specific client
+            const rules = await FetchRule.find({ clientId: clientId }).sort({ createdAt: -1 });
+            return res.json({ success: true, data: rules });
+        } else {
+            // GLOBAL: Fetch ONLY global rules (no clientId)
+            const rules = await FetchRule.find({ 
+                $or: [{ clientId: null }, { clientId: { $exists: false } }] 
+            }).sort({ createdAt: -1 });
+            return res.json({ success: true, data: rules });
+        }
+
+        const rules = await FetchRule.find(query).sort({ createdAt: -1 });
         res.json({ success: true, data: rules });
     } catch (error) {
         res.status(500).json({ error: error.message });
